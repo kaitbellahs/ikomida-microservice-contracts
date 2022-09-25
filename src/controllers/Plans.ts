@@ -39,7 +39,6 @@ export default class Plans {
       });
       return new Utils.Return<Types.Classes.CPlan[]>(true, plans);
     } catch (exception: any) {
-      console.error(exception);
       const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_GET_PLANS_EXCEPTION, exception);
       return error.logAndReturn(this.logger);
     }

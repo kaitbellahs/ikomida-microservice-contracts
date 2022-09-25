@@ -13,6 +13,12 @@ import {
 } from '@ikomida/shared-backend';
 import crypto from 'crypto';
 
+const host: any = {
+  development: 'https://dev.ikomida.com/',
+  homologation: 'https://hmlg.ikomida.com/',
+  production: 'https://ikomida.com/',
+}
+
 export default class Contracts {
   paymentGateway?: GateWays.Asaas;
   randCodes: Utils.RandCodes;
@@ -35,6 +41,7 @@ export default class Contracts {
     'admin',
     'manager',
   ];
+  host: string
 
   constructor(logger: Utils.Logger) {
     this.logger = logger;
@@ -53,6 +60,7 @@ export default class Contracts {
         this.logger.error(exception);
         process.exit(1);
       });
+    this.host = host[process.env.NODE_ENV ?? 'development'];
     this.paymentGateway = new GateWays.Asaas(this.logger);
     this.randCodes = new Utils.RandCodes();
   }
@@ -122,7 +130,6 @@ export default class Contracts {
       const signatureObject = payload.toJSON();
       delete signatureObject.signature
       delete signatureObject.payment
-      console.log('signatureObject:', JSON.stringify(signatureObject))
       const signature = await signData(signatureObject);
       const validationObject = {
         role,
@@ -217,7 +224,6 @@ export default class Contracts {
       const signatureObject = payload.toJSON();
       delete signatureObject.signature
       delete signatureObject.payment
-      console.log('signatureObject:', JSON.stringify(signatureObject))
       if (await validateSignature(signatureObject, payload.signature ?? '')) {
         const phoneValidationCodeModels = await DBModels.PhoneValidationCodeModel.findAll({
           where: {
@@ -448,11 +454,11 @@ export default class Contracts {
             Utils.Email.VENDOR_REGISTRATION_SUCCESSFULL,
             'iKomida',
             userModel?.name,
-            'https://ikomida.com/apps',
+            `${this.host}apps`,
             contractModel?.ikomidaID,
             userModel?.phone,
             'iKomida',
-            'https://ikomida.com/',
+            this.host,
           );
 
           const emailPayload = new Types.Classes.CAMQPPayload<Types.Classes.CAMQPPayloadObject>();
