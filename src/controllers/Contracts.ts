@@ -25,7 +25,7 @@ export default class Contracts {
   logger: Utils.Logger;
   bannedNames = [
     'ikomida',
-    'tialtonivel',
+    // 'tialtonivel',
     'Khalid',
     'Khalid-ait',
     'Khalid-ait-Bellahs',
