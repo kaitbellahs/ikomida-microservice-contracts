@@ -336,6 +336,18 @@ export default class Contracts {
         areaCode: Logics.Finances.toNumber(payload.areaCode),
         phone: Logics.Finances.toNumber(payload.phone),
       });
+      const contractPaymentSignature = await contractModel?.$create<DBModels.ContractPaymentSignatureModel>(
+        'contractPaymentSignature',
+        {
+          gateway: this.paymentGateway?.name,
+          subscriptionID: doRecurringSubscription?.data.id,
+          status: doRecurringSubscription?.data.status,
+          cycle: doRecurringSubscription?.data.cycle,
+          value: Math.ceil((doRecurringSubscription?.data.value ?? 0) * 100),
+          cardToken: doRecurringSubscription?.data.creditCard?.creditCardToken,
+          number: doRecurringSubscription?.data.creditCard?.creditCardNumber,
+        },
+      );
       await contractModel?.$create('address', {
         kind: Types.Types.TAddress.PROFESSIONAL,
         role: BackendTypes.Roles.VENDOR,
@@ -358,18 +370,6 @@ export default class Contracts {
       if (referredByModel && contractModel) {
         await referredByModel.$add('contracts', contractModel);
       }
-      const contractPaymentSignature = await contractModel?.$create<DBModels.ContractPaymentSignatureModel>(
-        'contractPaymentSignature',
-        {
-          gateway: this.paymentGateway?.name,
-          subscriptionID: doRecurringSubscription?.data.id,
-          status: doRecurringSubscription?.data.status,
-          cycle: doRecurringSubscription?.data.cycle,
-          value: Math.ceil((doRecurringSubscription?.data.value ?? 0) * 100),
-          cardToken: doRecurringSubscription?.data.creditCard?.creditCardToken,
-          number: doRecurringSubscription?.data.creditCard?.creditCardNumber,
-        },
-      );
       let lastDueDate;
       let nextDueDate;
       const payments = await this.paymentGateway?.getPayments(doRecurringSubscription?.data.id);
