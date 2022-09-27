@@ -10,6 +10,9 @@ export default class Plans {
   async getPlans() {
     try {
       const planModels = await DBModels.PlanModel.findAll({
+        where: {
+          active: true
+        },
         order: [['createdAt', 'ASC']],
       });
       const plans = planModels.map((planModel: DBModels.PlanModel) => {
