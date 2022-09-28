@@ -17,7 +17,7 @@ const host: any = {
   development: 'https://dev.ikomida.com/',
   homologation: 'https://hmlg.ikomida.com/',
   production: 'https://ikomida.com/',
-}
+};
 
 export default class Contracts {
   paymentGateway?: GateWays.Asaas;
@@ -41,7 +41,7 @@ export default class Contracts {
     'admin',
     'manager',
   ];
-  host: string
+  host: string;
 
   constructor(logger: Utils.Logger) {
     this.logger = logger;
@@ -53,7 +53,7 @@ export default class Contracts {
     })
       .then((setting: DBModels.SettingModel | null) => {
         if (setting?.value) {
-          this.bannedNames = JSON.parse(setting.value)
+          this.bannedNames = JSON.parse(setting.value);
         }
       })
       .catch((exception: any) => {
@@ -67,46 +67,66 @@ export default class Contracts {
 
   async createPhoneValidation(input: any) {
     try {
-      const payload: Types.Classes.CContract = Types.Classes.CContract.fromObject(input)
+      const payload: Types.Classes.CContract = Types.Classes.CContract.fromObject(input);
       if ((payload.contractName?.length ?? 0) <= 2) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_NAME);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_NAME,
+        );
         return error.logAndReturn(this.logger);
       }
       if (!Logics.Validations.validateUUID(payload.termId)) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_TERM);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_TERM,
+        );
         return error.logAndReturn(this.logger);
       }
       if ((payload.name?.length ?? 0) <= 2) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_NAME);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_NAME,
+        );
         return error.logAndReturn(this.logger);
       }
       if ((payload.lastName?.length ?? 0) <= 2) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_LAST_NAME);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_LAST_NAME,
+        );
         return error.logAndReturn(this.logger);
       }
       if (!Logics.Validations.validateCNPJ(payload.contractIdentity)) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_CPF);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_CPF,
+        );
         return error.logAndReturn(this.logger);
       }
       if (!Logics.Validations.validateCPF(payload.identity)) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_CPF);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_CPF,
+        );
         return error.logAndReturn(this.logger);
       }
       if (!Logics.Validations.validateEmail(payload.email)) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_EMAIL);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_EMAIL,
+        );
         return error.logAndReturn(this.logger);
       }
       if (!Logics.Validations.validatePhone(payload.phone)) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_PHONE);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_PHONE,
+        );
         return error.logAndReturn(this.logger);
       }
       if (!Logics.Validations.validatePassword(payload.password)) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_PASSWORD);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_PASSWORD,
+        );
         return error.logAndReturn(this.logger);
       }
       const [validateAddressCode] = Logics.Validations.validateAddress(payload.address);
       if (!validateAddressCode) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_PASSWORD);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_PASSWORD,
+        );
         return error.logAndReturn(this.logger);
       }
       const ikomidaID = `com.ikomida.br.${bundle(payload.contractName ?? '')}`;
@@ -122,14 +142,16 @@ export default class Contracts {
         },
       });
       if (contractModel) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_CREATE_PHONE_VALIDATION_INVALID_CONTRACT);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_CREATE_PHONE_VALIDATION_INVALID_CONTRACT,
+        );
         return error.logAndReturn(this.logger);
       }
       const code = Logics.Finances.pad(Math.ceil(Math.random() * 10000), 4);
       payload.phoneValidationCode = code;
       const signatureObject = payload.toJSON();
-      delete signatureObject.signature
-      delete signatureObject.payment
+      delete signatureObject.signature;
+      delete signatureObject.payment;
       const signature = await signData(signatureObject);
       const validationObject = {
         role,
@@ -151,7 +173,10 @@ export default class Contracts {
         return new Utils.Return(true, signature);
       }
     } catch (exception: any) {
-      const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_CREATE_PHONE_VALIDATION_EXCEPTION, exception);
+      const error = new Utils.iKomidaError(
+        Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_CREATE_PHONE_VALIDATION_EXCEPTION,
+        exception,
+      );
       return error.logAndReturn(this.logger);
     }
     const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_UNKNOWN);
@@ -160,41 +185,59 @@ export default class Contracts {
 
   async validatePhoneValidationCode(input: any) {
     try {
-      const payload: Types.Classes.CContract = Types.Classes.CContract.fromObject(input)
+      const payload: Types.Classes.CContract = Types.Classes.CContract.fromObject(input);
       if ((payload.contractName?.length ?? 0) <= 2) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_NAME);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_NAME,
+        );
         return error.logAndReturn(this.logger);
       }
       if (!Logics.Validations.validateUUID(payload.termId)) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_TERM);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_TERM,
+        );
         return error.logAndReturn(this.logger);
       }
       if ((payload.name?.length ?? 0) <= 2) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_NAME);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_NAME,
+        );
         return error.logAndReturn(this.logger);
       }
       if ((payload.lastName?.length ?? 0) <= 2) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_LAST_NAME);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_LAST_NAME,
+        );
         return error.logAndReturn(this.logger);
       }
       if (!Logics.Validations.validateCNPJ(payload.contractIdentity)) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_CPF);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_CPF,
+        );
         return error.logAndReturn(this.logger);
       }
       if (!Logics.Validations.validateCPF(payload.identity)) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_CPF);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_CPF,
+        );
         return error.logAndReturn(this.logger);
       }
       if (!Logics.Validations.validateEmail(payload.email)) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_EMAIL);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_EMAIL,
+        );
         return error.logAndReturn(this.logger);
       }
       if (!Logics.Validations.validatePhone(payload.phone)) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_PHONE);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_PHONE,
+        );
         return error.logAndReturn(this.logger);
       }
       if (!Logics.Validations.validatePassword(payload.password)) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_PASSWORD);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_PASSWORD,
+        );
         return error.logAndReturn(this.logger);
       }
       const [validateAddressCode, validateAddressMessage] = Logics.Validations.validateAddress(payload.address);
@@ -218,12 +261,14 @@ export default class Contracts {
         },
       });
       if (contractModel || this.bannedNames.includes(bundle(payload.contractName ?? ''))) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_VALIDATE_PHONE_VALIDATION_INVALID_CONTRACT);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_VALIDATE_PHONE_VALIDATION_INVALID_CONTRACT,
+        );
         return error.logAndReturn(this.logger);
       }
       const signatureObject = payload.toJSON();
-      delete signatureObject.signature
-      delete signatureObject.payment
+      delete signatureObject.signature;
+      delete signatureObject.payment;
       if (await validateSignature(signatureObject, payload.signature ?? '')) {
         const phoneValidationCodeModels = await DBModels.PhoneValidationCodeModel.findAll({
           where: {
@@ -235,7 +280,10 @@ export default class Contracts {
         return new Utils.Return((phoneValidationCodeModels?.length ?? 0) === 1);
       }
     } catch (exception: any) {
-      const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_VALIDATE_PHONE_VALIDATION_EXCEPTION, exception);
+      const error = new Utils.iKomidaError(
+        Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_VALIDATE_PHONE_VALIDATION_EXCEPTION,
+        exception,
+      );
       return error.logAndReturn(this.logger);
     }
     const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_VALIDATE_PHONE_VALIDATION_UNKNOWN);
@@ -244,12 +292,14 @@ export default class Contracts {
 
   async newContact(input: any, ip: string) {
     try {
-      const payload: Types.Classes.CContract = Types.Classes.CContract.fromObject(input)
+      const payload: Types.Classes.CContract = Types.Classes.CContract.fromObject(input);
       const ikomidaID = `com.ikomida.br.${bundle(payload.contractName ?? '')}`;
       const plan = await this.selectPlan(payload);
       const validatePhoneValidationCode = await this.validatePhoneValidationCode(input);
       if (!validatePhoneValidationCode?.success) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_NEW_USER_INVALID_PHONE_VALIDATION_CODE);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_NEW_USER_INVALID_PHONE_VALIDATION_CODE,
+        );
         return error.logAndReturn(this.logger);
       }
       const termModel = await DBModels.TermModel.findOne({
@@ -271,43 +321,44 @@ export default class Contracts {
         const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_RESTAURANT_ALREADY_REGISTERED);
         return error.logAndReturn(this.logger);
       }
-      const validity = Logics.Finances.pad(payload.payment?.validity ?? '', 4)
-      const subscriptionObject: Types.Classes.Asaas.CAsaasSubscription = Types.Classes.Asaas.CAsaasSubscription.fromObject({
-        customer: {
-          name: `${payload.name} ${payload.lastName}`,
-          email: payload.email,
-          areaCode: payload.areaCode,
-          phone: String(Logics.Finances.toNumber(payload.phone ?? '')),
-          identity: String(Logics.Finances.toNumber(payload.identity ?? '')),
-          address: {
-            postalCode: payload.address?.postalCode,
-            name: payload.address?.street,
-            number: payload.address?.number,
-            complement: payload.address?.complement,
-            province: payload.address?.city,
+      const validity = Logics.Finances.pad(payload.payment?.validity ?? '', 4);
+      const subscriptionObject: Types.Classes.Asaas.CAsaasSubscription =
+        Types.Classes.Asaas.CAsaasSubscription.fromObject({
+          customer: {
+            name: `${payload.name} ${payload.lastName}`,
+            email: payload.email,
+            areaCode: payload.areaCode,
+            phone: String(Logics.Finances.toNumber(payload.phone ?? '')),
+            identity: String(Logics.Finances.toNumber(payload.identity ?? '')),
+            address: {
+              postalCode: payload.address?.postalCode,
+              name: payload.address?.street,
+              number: payload.address?.number,
+              complement: payload.address?.complement,
+              province: payload.address?.city,
+            },
           },
-        },
-        plan: {
-          name: plan?.name ?? '',
-          price:
-            (plan?.price ?? 0) -
-            Logics.Finances.calcDiscount(
-              plan?.price ?? 0,
-              plan?.discount ?? 0,
-              plan?.discountType ?? Types.Types.TDiscount.NO,
-            ),
-        },
-        ikomidaID,
-        payment: {
-          holderName: payload.payment?.holder,
-          number: payload.payment?.number,
-          expiryMonth: Number(validity.substring(0, 2)),
-          expiryYear: Number(validity.substring(2, 4)),
-          ccv: Number(payload.payment?.code),
-        },
-        externalReference: plan?.name,
-        observations: null,
-      });
+          plan: {
+            name: plan?.name ?? '',
+            price:
+              (plan?.price ?? 0) -
+              Logics.Finances.calcDiscount(
+                plan?.price ?? 0,
+                plan?.discount ?? 0,
+                plan?.discountType ?? Types.Types.TDiscount.NO,
+              ),
+          },
+          ikomidaID,
+          payment: {
+            holderName: payload.payment?.holder,
+            number: payload.payment?.number,
+            expiryMonth: Number(validity.substring(0, 2)),
+            expiryYear: Number(validity.substring(2, 4)),
+            ccv: Number(payload.payment?.code),
+          },
+          externalReference: plan?.name,
+          observations: null,
+        });
       const doRecurringSubscription = await this.paymentGateway?.doRecurringSubscription(subscriptionObject, ip);
       if (
         !doRecurringSubscription?.success ||
@@ -378,10 +429,11 @@ export default class Contracts {
           const paymentStatus = paymentObject?.status;
           const originalDate = Logics.DateTime?.parseAsaasDate(paymentObject?.dueDate);
           const todayDate = Logics.DateTime?.parseAsaasDate(Logics.DateTime?.localToday());
-          const acceptedPaymentStatus = paymentStatus && [
-            Types.Types.TAsaasPaymentStatus.PENDING,
-            Types.Types.TAsaasPaymentStatus.CONFIRMED,
-          ].includes(paymentStatus);
+          const acceptedPaymentStatus =
+            paymentStatus &&
+            [Types.Types.TAsaasPaymentStatus.PENDING, Types.Types.TAsaasPaymentStatus.CONFIRMED].includes(
+              paymentStatus,
+            );
           const pendingStatus = paymentStatus && [Types.Types.TAsaasPaymentStatus.PENDING].includes(paymentStatus);
           if (acceptedPaymentStatus && originalDate <= todayDate && (!lastDueDate || originalDate > lastDueDate)) {
             lastDueDate = originalDate;
@@ -390,7 +442,10 @@ export default class Contracts {
             nextDueDate = originalDate;
           }
         } catch (exception: any) {
-          const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_NEW_CONTRACT_EXCEPTION, exception);
+          const error = new Utils.iKomidaError(
+            Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_NEW_CONTRACT_EXCEPTION,
+            exception,
+          );
           error.log(this.logger);
         }
       }
@@ -461,9 +516,9 @@ export default class Contracts {
             this.host,
           );
 
-          const emailPayload = new Types.Classes.CAMQPPayload<Types.Classes.CAMQPPayloadObject>();
+          const emailPayload = new Types.Classes.CAMQPPayload<Types.Classes.CEmail>();
           emailPayload.method = 'send';
-          let payloadObject: Types.Classes.CAMQPPayloadObject = Types.Classes.CAMQPPayloadObject.fromObject({
+          const payloadEmail: Types.Classes.CEmail = Types.Classes.CEmail.fromObject({
             from: {
               email: `no-replay@ikomida.com`,
               name: `iKomida`,
@@ -474,32 +529,38 @@ export default class Contracts {
             },
             message: emailMessage,
           });
-          emailPayload.object = payloadObject;
+          emailPayload.object = payloadEmail;
           const amqp = new Domain.RabbitMQ(this.logger);
           await amqp?.publish(Domain.RabbitMQ.EMAIL_QUEUE, emailPayload);
+
           const appMessage: Types.Classes.CApp = Types.Classes.CApp.fromObject({});
           appMessage.displayName = payload.contractName;
           appMessage.bundleId = ikomidaID;
           const newAppPayload = new Types.Classes.CAMQPPayload<Types.Classes.CAMQPPayloadObject>();
           newAppPayload.method = 'createApp';
-          payloadObject = new Types.Classes.CAMQPPayloadObject();
+          const payloadObject = new Types.Classes.CAMQPPayloadObject();
           payloadObject.message = appMessage;
           payloadObject.platform = 'android';
           payloadObject.contractId = contractModel?.id;
           newAppPayload.object = payloadObject;
-
           await amqp?.publish<Types.Classes.CAMQPPayloadObject>(Domain.RabbitMQ.APPS_QUEUE, newAppPayload);
           payloadObject.platform = 'ios';
           await amqp?.publish<Types.Classes.CAMQPPayloadObject>(Domain.RabbitMQ.APPS_QUEUE, newAppPayload);
           await amqp?.close();
         }
       } catch (exception: any) {
-        const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_NEW_CONTRACT_EXCEPTION, exception);
+        const error = new Utils.iKomidaError(
+          Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_NEW_CONTRACT_EXCEPTION,
+          exception,
+        );
         error.log(this.logger);
       }
       if (userModel) return new Utils.Return(true, null);
     } catch (exception: any) {
-      const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_NEW_CONTRACT_EXCEPTION, exception);
+      const error = new Utils.iKomidaError(
+        Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_NEW_CONTRACT_EXCEPTION,
+        exception,
+      );
       return error.logAndReturn(this.logger);
     }
     const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_UNEXPECTED_ERROR);
