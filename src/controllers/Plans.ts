@@ -11,7 +11,7 @@ export default class Plans {
     try {
       const planModels = await DBModels.PlanModel.findAll({
         where: {
-          active: true
+          active: true,
         },
         order: [['createdAt', 'ASC']],
       });
@@ -32,7 +32,7 @@ export default class Plans {
           planModel.support ?? [],
           planModel.highlighted ?? false,
           (planModel?.price ?? 0) -
-          Logics.Finances.calcDiscount(planModel?.price ?? 0, planModel?.discount ?? 0, planModel?.discountType),
+            Logics.Finances.calcDiscount(planModel?.price ?? 0, planModel?.discount ?? 0, planModel?.discountType),
           undefined,
           undefined,
           planModel.order,

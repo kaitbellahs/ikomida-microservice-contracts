@@ -33,4 +33,4 @@ COPY --chown=ikomida:ikomida --from=build /service/build ./build/
 
 EXPOSE ${PORT}
 
-ENTRYPOINT ["node", "build/service.js"]
+ENTRYPOINT ["node", "--enable-source-maps", "build/service.js"]
