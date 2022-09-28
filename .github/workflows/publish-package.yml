@@ -7,6 +7,13 @@ on:
       - dev
       - hmlg
       - main
+
+env:
+  GAR_LOCATION: us-central1 # # TODO: update region of the Artifact Registry
+  GKE_CLUSTER: ikomida-cluster # TODO: update to cluster name
+  GKE_ZONE: us-central1-b # TODO: update to cluster zone
+  IMAGE: static-site
+
 jobs:
   build_and_deploy_ikomida:
     if: github.event.pull_request.merged == true
@@ -29,8 +36,8 @@ jobs:
         run: |
           echo "Selected gcloud project id: ${PROJECT_ID}"
           rm .npmrc || true
-          echo "@ikomida:registry=https://us-central1-npm.pkg.dev/${PROJECT_ID}/node/" >> .npmrc
-          echo "//us-central1-npm.pkg.dev/${PROJECT_ID}/node/:always-auth=true" >> .npmrc
+          echo "@ikomida:registry=https://${GAR_LOCATION}-npm.pkg.dev/${PROJECT_ID}/node/" >> .npmrc
+          echo "//${GAR_LOCATION}-npm.pkg.dev/${PROJECT_ID}/node/:always-auth=true" >> .npmrc
           yarn glogin
       - name: Install dependencies
         run: yarn install --frozen-lockfile
@@ -45,30 +52,68 @@ jobs:
       #   with:
       #     version: latest
       #     install: true
-      - name: Login to Artifact Registry
-        uses: docker/login-action@v1
-        with:
-          registry: us-central1-docker.pkg.dev
-          username: oauth2accesstoken
-          password: ${{ steps.auth.outputs.access_token }}
-      - name: Build and push docker image
-        uses: docker/build-push-action@v2
-        env:
-          PROJECT_ID: ${{ steps.auth.outputs.project_id }}
-        with:
-          context: ./
-          file: ./Dockerfile
-          push: true
-          tags: us-central1-docker.pkg.dev/${PROJECT_ID}/docker/contracts-microservice-image:test
-          cache-from: type=registry,ref=us-central1-docker.pkg.dev/${PROJECT_ID}/docker/contracts-microservice-image:buildcache
-          cache-to: type=registry,ref=us-central1-docker.pkg.dev/${PROJECT_ID}/docker/contracts-microservice-image:latest:buildcache,mode=max
-      - name: Update branch tag version
-        run: |
-          git config user.name "${GITHUB_ACTOR}"
-          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          PACKAGE_VERSION=$(cat package.json | grep \\\"version\\\" | head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]')
-          git tag "v${PACKAGE_VERSION}"
-          git push origin "v${PACKAGE_VERSION}"
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v0
+
+      # Configure Docker to use the gcloud command-line tool as a credential
+      # helper for authentication (https://cloud.google.com/artifact-registry/docs/docker/authentication)
+      - name: Docker configuration
+        run: |-
+          gcloud --quiet auth configure-docker ${GAR_LOCATION}-docker.pkg.dev
+      # Get the GKE credentials so we can deploy to the cluster
+      - name: Set up GKE credentials
+        run: |-
+          gcloud container clusters get-credentials "${GKE_CLUSTER}" --zone "${GKE_ZONE}"
+
+      - name: Build
+        run: |-
+          docker build \
+            --tag "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/contracts-microservice-image:latest" \
+            --build-arg PROJECT_ID="${PROJECT_ID}" \
+            .
+      # Push the Docker image to Google Artifact Registry
+      - name: Publish
+        run: |-
+          docker push "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/contracts-microservice-image:latest"
+
+      - name: Deploy
+        run: |-
+          kubectl get pods
+
+      # - name: Login to Artifact Registry
+      #   uses: docker/login-action@v1
+      #   with:
+      #     registry: us-central1-docker.pkg.dev
+      #     username: oauth2accesstoken
+      #     password: ${{ steps.auth.outputs.access_token }}
+      # - name: Build and push docker image
+      #   uses: docker/build-push-action@v2
+      #   env:
+      #     PROJECT_ID: ${{ steps.auth.outputs.project_id }}
+      #   with:
+      #     context: ./
+      #     file: ./Dockerfile
+      #     push: true
+      #     tags: us-central1-docker.pkg.dev/${PROJECT_ID}/docker/contracts-microservice-image:test
+      #     cache-from: type=registry,ref=us-central1-docker.pkg.dev/${PROJECT_ID}/docker/contracts-microservice-image:buildcache
+      #     cache-to: type=registry,ref=us-central1-docker.pkg.dev/${PROJECT_ID}/docker/contracts-microservice-image:latest:buildcache,mode=max
+      # - name: Update branch tag version
+      #   run: |
+      #     git config user.name "${GITHUB_ACTOR}"
+      #     git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+      #     PACKAGE_VERSION=$(cat package.json | grep \\\"version\\\" | head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]')
+      #     git tag "v${PACKAGE_VERSION}"
+      #     git push origin "v${PACKAGE_VERSION}"
+      # - id: "get-credentials"
+      #   uses: "google-github-actions/get-gke-credentials@v0"
+      #   with:
+      #     cluster_name: "my-cluster"
+      #     location: "us-central1-a"
+
+      # The KUBECONFIG env var is automatically exported and picked up by kubectl.
+      # - id: "get-pods"
+      #   run: "kubectl get pods"
       # - uses: tale/kubectl-action@v1
       #   with:
       #     base64-kube-config: ${{ secrets.KUBE_CONFIG }}
