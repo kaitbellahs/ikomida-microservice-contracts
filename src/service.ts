@@ -57,6 +57,9 @@ try {
     logger.info(`${name} listening at http://localhost:${port}`);
   });
 } catch (exception: any) {
-  const error = new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_CREATE_LISTNING_EXCEPTION, exception);
+  const error = new Utils.iKomidaError(
+    Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_CREATE_LISTNING_EXCEPTION,
+    exception,
+  );
   error.log(logger);
 }
