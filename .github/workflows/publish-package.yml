@@ -1,0 +1,74 @@
+name: publish ikomida dev lib to artifact registry on pull request merge
+on:
+  pull_request_target:
+    types:
+      - closed
+    branches:
+      - dev
+      - hmlg
+      - main
+jobs:
+  build_and_deploy_ikomida:
+    if: github.event.pull_request.merged == true
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v3
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
+        uses: "google-github-actions/auth@v0"
+        with:
+          credentials_json: "${{ endsWith(github.ref, '/main') && secrets.ARTIFACT_REGISTRY_IKOMIDA_PROD_SERVICE_ACOUNT || (endsWith(github.ref, '/hmlg') && secrets.ARTIFACT_REGISTRY_IKOMIDA_HMLG_SERVICE_ACOUNT || secrets.ARTIFACT_REGISTRY_IKOMIDA_DEV_SERVICE_ACOUNT) }}"
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x.x
+          cache: yarn
+      - name: Auth npm with artifactregistry and set gcloud project id
+        env:
+          PROJECT_ID: ${{ steps.auth.outputs.project_id }}
+        run: |
+          echo "Selected gcloud project id: ${PROJECT_ID}"
+          rm .npmrc || true
+          echo "@ikomida:registry=https://us-central1-npm.pkg.dev/${PROJECT_ID}/node/" >> .npmrc
+          echo "//us-central1-npm.pkg.dev/${PROJECT_ID}/node/:always-auth=true" >> .npmrc
+          yarn glogin
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+      - name: Prepare code
+        run: |
+          yarn format
+          yarn lint
+      - name: Build code
+        run: yarn build
+      # - name: Set up Docker Buildx
+      #   uses: docker/setup-buildx-action@v2
+      #   with:
+      #     version: latest
+      #     install: true
+      - name: Login to Artifact Registry
+        uses: docker/login-action@v1
+        with:
+          registry: us-central1-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+      - name: Build and push docker image
+        uses: docker/build-push-action@v2
+        env:
+          PROJECT_ID: ${{ steps.auth.outputs.project_id }}
+        with:
+          context: ./
+          file: ./Dockerfile
+          push: true
+          tags: us-central1-docker.pkg.dev/${PROJECT_ID}/docker/contracts-microservice-image:test
+          cache-from: type=registry,ref=us-central1-docker.pkg.dev/${PROJECT_ID}/docker/contracts-microservice-image:buildcache
+          cache-to: type=registry,ref=us-central1-docker.pkg.dev/${PROJECT_ID}/docker/contracts-microservice-image:latest:buildcache,mode=max
+      - name: Update branch tag version
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          PACKAGE_VERSION=$(cat package.json | grep \\\"version\\\" | head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]')
+          git tag "v${PACKAGE_VERSION}"
+          git push origin "v${PACKAGE_VERSION}"
+      - uses: tale/kubectl-action@v1
+        with:
+          base64-kube-config: ${{ secrets.KUBE_CONFIG }}
