@@ -31,7 +31,7 @@ jobs:
           yarn glogin
       - name: Check service version
         run: |
-          SERVICE_NAME=$(node --eval="process.stdout.write(require('./package.json').name)")
+          # SERVICE_NAME=$(node --eval="process.stdout.write(require('./package.json').name)")
           SERVICE_VERSION=$(node --eval="process.stdout.write(require('./package.json').version)")
           SERVICE_VERSION_REMOTE=$(git describe --tags --abbrev=0 || "0.0.0")
           if [[ $SERVICE_VERSION > $SERVICE_VERSION_REMOTE ]]; then
