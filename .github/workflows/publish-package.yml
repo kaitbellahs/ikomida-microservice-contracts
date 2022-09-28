@@ -58,7 +58,6 @@ jobs:
         with:
           context: ./
           file: ./Dockerfile
-          builder: ${{ steps.buildx.outputs.name }}
           push: true
           tags: us-central1-docker.pkg.dev/${PROJECT_ID}/docker/contracts-microservice-image:test
           cache-from: type=registry,ref=us-central1-docker.pkg.dev/${PROJECT_ID}/docker/contracts-microservice-image:buildcache
