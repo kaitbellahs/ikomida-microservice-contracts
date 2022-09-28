@@ -69,6 +69,6 @@ jobs:
           PACKAGE_VERSION=$(cat package.json | grep \\\"version\\\" | head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]')
           git tag "v${PACKAGE_VERSION}"
           git push origin "v${PACKAGE_VERSION}"
-      - uses: tale/kubectl-action@v1
-        with:
-          base64-kube-config: ${{ secrets.KUBE_CONFIG }}
+      # - uses: tale/kubectl-action@v1
+      #   with:
+      #     base64-kube-config: ${{ secrets.KUBE_CONFIG }}
