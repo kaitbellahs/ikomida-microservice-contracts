@@ -463,7 +463,7 @@ export default class Contracts {
 
           const emailPayload = new Types.Classes.CAMQPPayload<Types.Classes.CAMQPPayloadObject>();
           emailPayload.method = 'send';
-          let payloadObject: Types.Classes.CAMQPPayloadObject = Types.Classes.CAMQPPayloadObject.fromObject({
+          let payloadObject: Types.Classes.CEmail = Types.Classes.CEmail.fromObject({
             from: {
               email: `no-replay@ikomida.com`,
               name: `iKomida`,
