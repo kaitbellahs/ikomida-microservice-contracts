@@ -60,7 +60,7 @@ jobs:
       # helper for authentication (https://cloud.google.com/artifact-registry/docs/docker/authentication)
       - name: Docker configuration
         run: |-
-          gcloud --quiet auth configure-docker ${GAR_LOCATION}-docker.pkg.dev
+          gcloud auth configure-docker $GAR_LOCATION-docker.pkg.dev
       # Get the GKE credentials so we can deploy to the cluster
       - name: Set up GKE credentials
         run: |-
