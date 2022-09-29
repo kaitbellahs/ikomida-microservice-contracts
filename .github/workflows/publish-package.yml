@@ -60,7 +60,7 @@ jobs:
       # helper for authentication (https://cloud.google.com/artifact-registry/docs/docker/authentication)
       - name: Docker configuration
         run: |-
-          gcloud auth configure-docker $GAR_LOCATION-docker.pkg.dev
+          gcloud auth configure-docker us-central1-docker.pkg.dev --project ikomida-dev
       # Get the GKE credentials so we can deploy to the cluster
       - name: Set up GKE credentials
         run: |-
