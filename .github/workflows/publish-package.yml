@@ -24,7 +24,7 @@ jobs:
         name: "Authenticate to Google Cloud"
         uses: "google-github-actions/auth@v0"
         with:
-          credentials_json: "${{ endsWith(github.ref, '/main') && secrets.ARTIFACT_REGISTRY_IKOMIDA_PROD_SERVICE_ACOUNT || (endsWith(github.ref, '/hmlg') && secrets.ARTIFACT_REGISTRY_IKOMIDA_HMLG_SERVICE_ACOUNT || secrets.ARTIFACT_REGISTRY_IKOMIDA_DEV_SERVICE_ACOUNT) }}"
+          credentials_json: "${{ endsWith(github.ref, '/main') && secrets.BUILD_IKOMIDA_PROD_SERVICE_ACOUNT || (endsWith(github.ref, '/hmlg') && secrets.BUILD_IKOMIDA_HMLG_SERVICE_ACOUNT || secrets.BUILD_IKOMIDA_DEV_SERVICE_ACOUNT) }}"
       - name: Setup node
         uses: actions/setup-node@v3
         with:
