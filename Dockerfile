@@ -1,6 +1,5 @@
 FROM  google/cloud-sdk:alpine AS build
 
-ARG PORT 80
 ARG PROJECT_ID
 ARG GOOGLE_SERVICE_ACCOUNT
 ENV GOOGLE_APPLICATION_CREDENTIALS /service/serviceAccount.json
@@ -30,7 +29,5 @@ WORKDIR /service
 COPY --chown=ikomida:ikomida --from=build /service/package.json ./
 COPY --chown=ikomida:ikomida --from=build /service/node_modules ./node_modules/
 COPY --chown=ikomida:ikomida --from=build /service/build ./build/
-
-EXPOSE ${PORT}
 
 ENTRYPOINT ["node", "--enable-source-maps", "build/service.js"]
