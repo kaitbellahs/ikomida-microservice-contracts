@@ -26,11 +26,16 @@ jobs:
         uses: "google-github-actions/auth@v0"
         with:
           credentials_json: "${{ endsWith(github.ref, '/main') && secrets.BUILD_IKOMIDA_PROD_SERVICE_ACOUNT || (endsWith(github.ref, '/hmlg') && secrets.BUILD_IKOMIDA_HMLG_SERVICE_ACOUNT || secrets.BUILD_IKOMIDA_DEV_SERVICE_ACOUNT) }}"
-      - name: Setup node
-        uses: actions/setup-node@v3
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+      - uses: actions/cache@v3
+        id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
         with:
-          node-version: 16.x.x
-          cache: yarn
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
       - name: Auth npm with artifactregistry and set gcloud project id
         env:
           PROJECT_ID: ${{ steps.auth.outputs.project_id }}
@@ -48,8 +53,6 @@ jobs:
           yarn lint
       - name: Build code
         run: yarn build
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v0
       - name: Docker configuration
         env:
           PROJECT_ID: ${{ steps.auth.outputs.project_id }}
@@ -58,7 +61,6 @@ jobs:
       - name: Set up GKE credentials
         run: |-
           gcloud container clusters get-credentials "${GKE_CLUSTER}" --zone "${GKE_ZONE}"
-
       - id: Cache
         name: get cache
         env:
