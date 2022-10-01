@@ -65,7 +65,6 @@ jobs:
         name: Create docker builder
         run: |-
           unset DOCKER_HOST
-          docker context create builders
           docker context use builders
           docker buildx create --name container --driver docker-container
           docker buildx use container
