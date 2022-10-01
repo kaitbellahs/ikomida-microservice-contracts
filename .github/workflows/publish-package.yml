@@ -89,5 +89,4 @@ jobs:
         run: |-
           kubectl get pods
           kubectl -n ikomida delete deploy contracts-microservice || true
-          sudo apt-get add envsubst -y
           for FILE in k8s/*.yaml; do printf "$(cat $FILE)\n---\n" | envsubst; done | kubectl apply -f -
