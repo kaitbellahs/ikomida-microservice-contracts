@@ -23,7 +23,10 @@ jobs:
       - name: Auth npm with artifactregistry and set gcloud project id
         env:
           PROJECT_ID: ${{ steps.auth.outputs.project_id }}
-        run: |
+          SERVICE_ACCOUNT: "${{ endsWith(github.ref, '/main') && secrets.BUILD_IKOMIDA_PROD_SERVICE_ACOUNT || (endsWith(github.ref, '/hmlg') && secrets.BUILD_IKOMIDA_HMLG_SERVICE_ACOUNT || secrets.BUILD_IKOMIDA_DEV_SERVICE_ACOUNT) }}"
+        run: |-
+          BASE64_SERVICE_ACCOUNT=$(echo "${SERVICE_ACCOUNT}" | base64)
+          echo "BASE64_SERVICE_ACCOUNT: ${BASE64_SERVICE_ACCOUNT}"
           echo "Selected gcloud project id: ${PROJECT_ID}"
           rm .npmrc || true
           echo "@ikomida:registry=https://us-central1-npm.pkg.dev/${PROJECT_ID}/node/" >> .npmrc
