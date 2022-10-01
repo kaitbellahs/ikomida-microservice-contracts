@@ -64,7 +64,8 @@ jobs:
       - id: Builder
         name: Create docker builder
         run: |-
-          docker buildx create --name container --driver docker-container --context default
+          docker buildx create --name container --driver docker-container
+          docker buildx use container
       - id: Docker
         name: Build & push docker image
         env:
@@ -73,7 +74,7 @@ jobs:
           SERVICE_ACCOUNT: "${{ endsWith(github.ref, '/main') && secrets.BUILD_IKOMIDA_PROD_SERVICE_ACOUNT || (endsWith(github.ref, '/hmlg') && secrets.BUILD_IKOMIDA_HMLG_SERVICE_ACOUNT || secrets.BUILD_IKOMIDA_DEV_SERVICE_ACOUNT) }}"
         run: |-
           BASE64_SERVICE_ACCOUNT=$(echo "${SERVICE_ACCOUNT}" | base64)
-          docker buildx build -o type=registry --cache-to=type=gha --cache-from=type=gha --build-arg BUILDKIT_INLINE_CACHE=1 "${DOCKER_IMAGE}" -t "${DOCKER_IMAGE}" --build-arg GOOGLE_SERVICE_ACCOUNT="${BASE64_SERVICE_ACCOUNT}" --build-arg PROJECT_ID="${PROJECT_ID}" --builder=container .
+          docker buildx build -o type=registry --cache-to=type=gha --cache-from=type=gha --build-arg BUILDKIT_INLINE_CACHE=1 "${DOCKER_IMAGE}" -t "${DOCKER_IMAGE}" --build-arg GOOGLE_SERVICE_ACCOUNT="${BASE64_SERVICE_ACCOUNT}" --build-arg PROJECT_ID="${PROJECT_ID}" .
       - name: Deploy
         env:
           PROJECT_ID: ${{ steps.auth.outputs.project_id }}
