@@ -47,48 +47,35 @@ jobs:
           yarn glogin
       - name: Install dependencies
         run: yarn install --frozen-lockfile
-      - name: Prepare code
+      - name: Prepare ikomida code
         run: |
           yarn format
           yarn lint
-      - name: Build code
+      - name: Build ikomida code
         run: yarn build
-      - name: Docker configuration
+      - name: Setup Docker credentials
         env:
           PROJECT_ID: ${{ steps.auth.outputs.project_id }}
         run: |-
           gcloud auth configure-docker ${GAR_LOCATION}-docker.pkg.dev --project ${PROJECT_ID}
-      - name: Set up GKE credentials
+      - name: Setup GKE credentials
         run: |-
           gcloud container clusters get-credentials "${GKE_CLUSTER}" --zone "${GKE_ZONE}"
-      - id: Cache
-        name: get cache
+      - id: Builder
+        name: Create docker builder
+        run: docker buildx create --name container --driver docker-container --use
+      - id: Docker
+        name: Build & push docker image
         env:
           PROJECT_ID: ${{ steps.auth.outputs.project_id }}
-        run: |-
-          echo "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}"
-          docker pull "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}" || true
-      - name: Build
-        env:
-          PROJECT_ID: ${{ steps.auth.outputs.project_id }}
+          DOCKER_IMAGE: ${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}
           SERVICE_ACCOUNT: "${{ endsWith(github.ref, '/main') && secrets.BUILD_IKOMIDA_PROD_SERVICE_ACOUNT || (endsWith(github.ref, '/hmlg') && secrets.BUILD_IKOMIDA_HMLG_SERVICE_ACOUNT || secrets.BUILD_IKOMIDA_DEV_SERVICE_ACOUNT) }}"
         run: |-
           BASE64_SERVICE_ACCOUNT=$(echo "${SERVICE_ACCOUNT}" | base64)
-          echo "${BASE64_SERVICE_ACCOUNT}"
-          docker build \
-            --tag "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}" \
-            --build-arg GOOGLE_SERVICE_ACCOUNT="${BASE64_SERVICE_ACCOUNT}" \
-            --build-arg PROJECT_ID="${PROJECT_ID}" \
-            --cache-from "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}" \
-            .
-      # Push the Docker image to Google Artifact Registry
-      - name: Publish
+          docker buildx build -o type=registry --cache-to=type=gha --cache-from=type=gha --build-arg BUILDKIT_INLINE_CACHE=1 "${DOCKER_IMAGE}" -t "${DOCKER_IMAGE}" --build-arg GOOGLE_SERVICE_ACCOUNT="${BASE64_SERVICE_ACCOUNT}" --build-arg PROJECT_ID="${PROJECT_ID}" --builder=container .
+      - name: Deploy
         env:
           PROJECT_ID: ${{ steps.auth.outputs.project_id }}
-        run: |-
-          docker push "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}"
-
-      - name: Deploy
         run: |-
           kubectl get pods
           kubectl -n ikomida delete deploy contracts-microservice || true
