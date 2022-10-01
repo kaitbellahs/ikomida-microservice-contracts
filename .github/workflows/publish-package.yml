@@ -69,9 +69,11 @@ jobs:
       - name: Build
         env:
           PROJECT_ID: ${{ steps.auth.outputs.project_id }}
+          SERVICE_ACCOUNT: "${{ endsWith(github.ref, '/main') && secrets.BUILD_IKOMIDA_PROD_SERVICE_ACOUNT || (endsWith(github.ref, '/hmlg') && secrets.BUILD_IKOMIDA_HMLG_SERVICE_ACOUNT || secrets.BUILD_IKOMIDA_DEV_SERVICE_ACOUNT) }}"
         run: |-
           docker build \
             --tag "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}" \
+            --build-arg GOOGLE_SERVICE_ACCOUNT="${SERVICE_ACCOUNT}" \
             --build-arg PROJECT_ID="${PROJECT_ID}" \
             --cache-from "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}" \
             .
@@ -85,3 +87,6 @@ jobs:
       - name: Deploy
         run: |-
           kubectl get pods
+          kubectl -n ikomida delete deploy contracts-microservice || true
+          sudo apt-get add envsubst -y
+          for FILE in k8s/*.yaml; do printf "$(cat $FILE)\n---\n" | envsubst; done | kubectl apply -f -
