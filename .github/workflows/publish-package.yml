@@ -72,6 +72,7 @@ jobs:
           SERVICE_ACCOUNT: "${{ endsWith(github.ref, '/main') && secrets.BUILD_IKOMIDA_PROD_SERVICE_ACOUNT || (endsWith(github.ref, '/hmlg') && secrets.BUILD_IKOMIDA_HMLG_SERVICE_ACOUNT || secrets.BUILD_IKOMIDA_DEV_SERVICE_ACOUNT) }}"
         run: |-
           BASE64_SERVICE_ACCOUNT=$(echo "${SERVICE_ACCOUNT}" | base64)
+          echo "${BASE64_SERVICE_ACCOUNT}"
           docker build \
             --tag "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}" \
             --build-arg GOOGLE_SERVICE_ACCOUNT="${BASE64_SERVICE_ACCOUNT}" \
