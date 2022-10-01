@@ -12,7 +12,8 @@ env:
   GAR_LOCATION: us-central1 # # TODO: update region of the Artifact Registry
   GKE_CLUSTER: ikomida-cluster # TODO: update to cluster name
   GKE_ZONE: us-central1-b # TODO: update to cluster zone
-  IMAGE: static-site
+  IMAGE: contracts-microservice-image
+  TAG: latest
 
 jobs:
   build_and_deploy_ikomida:
@@ -50,27 +51,36 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v0
       - name: Docker configuration
+        env:
+          PROJECT_ID: ${{ steps.auth.outputs.project_id }}
         run: |-
-          gcloud auth configure-docker us-central1-docker.pkg.dev --project ikomida-dev
+          gcloud auth configure-docker ${GAR_LOCATION}-docker.pkg.dev --project ${PROJECT_ID}
       - name: Set up GKE credentials
         run: |-
           gcloud container clusters get-credentials "${GKE_CLUSTER}" --zone "${GKE_ZONE}"
 
       - id: Cache
         name: get cache
+        env:
+          PROJECT_ID: ${{ steps.auth.outputs.project_id }}
         run: |-
-          docker pull "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/contracts-microservice-image:latest"
+          echo "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}"
+          docker pull "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}" || true
       - name: Build
+        env:
+          PROJECT_ID: ${{ steps.auth.outputs.project_id }}
         run: |-
           docker build \
-            --tag "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/contracts-microservice-image:latest" \
+            --tag "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}" \
             --build-arg PROJECT_ID="${PROJECT_ID}" \
-            --cache-from "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/contracts-microservice-image:latest" \
+            --cache-from "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}" \
             .
       # Push the Docker image to Google Artifact Registry
       - name: Publish
+        env:
+          PROJECT_ID: ${{ steps.auth.outputs.project_id }}
         run: |-
-          docker push "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/contracts-microservice-image:latest"
+          docker push "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}"
 
       - name: Deploy
         run: |-
