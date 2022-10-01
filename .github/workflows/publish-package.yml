@@ -63,7 +63,8 @@ jobs:
           gcloud container clusters get-credentials "${GKE_CLUSTER}" --zone "${GKE_ZONE}"
       - id: Builder
         name: Create docker builder
-        run: docker buildx create --name container --driver docker-container --use
+        run: |-
+          docker buildx create --name container --driver docker-container --context default
       - id: Docker
         name: Build & push docker image
         env:
