@@ -35,6 +35,8 @@ jobs:
           echo "GITHUB_ENV: ${cat $GITHUB_ENV)"
           echo "PROJECT_ID=\"$(echo $GCLOUD_PROJECT)\"" >> $GITHUB_ENV
           echo "GITHUB_ENV: ${cat $GITHUB_ENV)"
+          echo "DOCKER_IMAGE=\"$(echo $DOCKER_IMAGE)\"" >> $GITHUB_ENV
+          echo "GITHUB_ENV: ${cat $GITHUB_ENV)"
       - name: Setup Docker credentials
         run: |-
           gcloud auth configure-docker ${GCLOUD_LOCATION}-docker.pkg.dev --project ${GCLOUD_PROJECT}
