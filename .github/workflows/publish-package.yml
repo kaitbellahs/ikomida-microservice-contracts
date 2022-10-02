@@ -29,6 +29,11 @@ jobs:
         uses: "google-github-actions/auth@v0"
         with:
           credentials_json: "${{ endsWith(github.ref, '/main') && secrets.BUILD_IKOMIDA_PROD_SERVICE_ACOUNT || (endsWith(github.ref, '/hmlg') && secrets.BUILD_IKOMIDA_HMLG_SERVICE_ACOUNT || secrets.BUILD_IKOMIDA_DEV_SERVICE_ACOUNT) }}"
+      - name: Export ENV
+        run: |-
+          export PROJECT_ID = ${GCLOUD_PROJECT}
+          export DOCKER_IMAGE=${GCLOUD_LOCATION}-docker.pkg.dev/${GCLOUD_PROJECT}/docker/${IMAGE}:${TAG}
+          export BASE64_SERVICE_ACCOUNT="$(cat ${GOOGLE_APPLICATION_CREDENTIALS} | base64)"
       - name: Setup Docker credentials
         run: |-
           gcloud auth configure-docker ${GCLOUD_LOCATION}-docker.pkg.dev --project ${GCLOUD_PROJECT}
@@ -51,20 +56,13 @@ jobs:
       - id: build-push
         name: Build & push docker image
         run: |-
-          DOCKER_IMAGE=${GCLOUD_LOCATION}-docker.pkg.dev/${GCLOUD_PROJECT}/docker/${IMAGE}:${TAG}
-          echo "Image: ${DOCKER_IMAGE}"
-          echo "SERVICE ACCOUNT: $(cat ${GOOGLE_APPLICATION_CREDENTIALS})"
-          BASE64_SERVICE_ACCOUNT="$(cat ${GOOGLE_APPLICATION_CREDENTIALS} | base64)"
-          echo "SERVICE ACCOUNT BSE64: ${BASE64_SERVICE_ACCOUNT}"
-          docker buildx build -t "${DOCKER_IMAGE}" . -o "type=registry" --cache-to "type=local,dest=/tmp/.buildx-cache-new,mode=max" --cache-from "type=local,src=/tmp/.buildx-cache" --build-arg GOOGLE_SERVICE_ACCOUNT="${BASE64_SERVICE_ACCOUNT}" --build-arg GCLOUD_PROJECT="${GCLOUD_PROJECT}" --builder=container
+          docker buildx build -t "${DOCKER_IMAGE}" . -o "type=registry" --cache-to "type=local,dest=/tmp/.buildx-cache-new,mode=max" --cache-from "type=local,src=/tmp/.buildx-cache" --build-arg GOOGLE_SERVICE_ACCOUNT="${BASE64_SERVICE_ACCOUNT}" --build-arg PROJECT_ID="${PROJECT_ID}" --builder=container
       - id: update-docker-cache
         name: Move cache
         run: |
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       - name: Deploy
-        env:
-          GCLOUD_PROJECT: ${{ steps.auth.outputs.project_id }}
         run: |-
           kubectl get pods
           kubectl -n ikomida delete deploy contracts-microservice || true
