@@ -25,7 +25,7 @@ export default class Contracts {
   logger: Utils.Logger;
   bannedNames = [
     'ikomida',
-    // 'tialtonivel',
+    'tialtonivel',
     'Khalid',
     'Khalid-ait',
     'Khalid-ait-Bellahs',
@@ -45,21 +45,6 @@ export default class Contracts {
 
   constructor(logger: Utils.Logger) {
     this.logger = logger;
-    DBModels.SettingModel.findOne({
-      where: {
-        name: 'bannedNames',
-        active: true,
-      },
-    })
-      .then((setting: DBModels.SettingModel | null) => {
-        if (setting?.value) {
-          this.bannedNames = JSON.parse(setting.value);
-        }
-      })
-      .catch((exception: any) => {
-        this.logger.error(exception);
-        process.exit(1);
-      });
     this.host = host[process.env.NODE_ENV ?? 'development'];
     this.paymentGateway = new GateWays.Asaas(this.logger);
     this.randCodes = new Utils.RandCodes();
@@ -260,7 +245,21 @@ export default class Contracts {
           ikomidaID,
         },
       });
-      if (contractModel || this.bannedNames.includes(bundle(payload.contractName ?? ''))) {
+
+      const bannedNames: string[] = (
+        JSON.parse(
+          (
+            await DBModels.SettingModel.findOne({
+              where: {
+                name: 'bannedNames',
+                active: true,
+              },
+            })
+          )?.value ?? '[]',
+        ) as string[]
+      );
+      bannedNames.push(...this.bannedNames)
+      if (contractModel || bannedNames.includes(bundle(payload.contractName ?? ''))) {
         const error = new Utils.iKomidaError(
           Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_VALIDATE_PHONE_VALIDATION_INVALID_CONTRACT,
         );
