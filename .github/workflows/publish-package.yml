@@ -12,15 +12,15 @@ on:
   #     - main
 
 env:
-  GAR_LOCATION: us-central1 # # TODO: update region of the Artifact Registry
-  GKE_CLUSTER: ikomida-cluster # TODO: update to cluster name
-  GKE_ZONE: us-central1-b # TODO: update to cluster zone
+  GCLOUD_LOCATION: us-central1
+  GKE_CLUSTER: ikomida-cluster
+  GKE_ZONE: us-central1-b
   IMAGE: contracts-microservice-image
   TAG: latest
 
 jobs:
   build_and_deploy_ikomida:
-    # if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
@@ -30,22 +30,11 @@ jobs:
         with:
           credentials_json: "${{ endsWith(github.ref, '/main') && secrets.BUILD_IKOMIDA_PROD_SERVICE_ACOUNT || (endsWith(github.ref, '/hmlg') && secrets.BUILD_IKOMIDA_HMLG_SERVICE_ACOUNT || secrets.BUILD_IKOMIDA_DEV_SERVICE_ACOUNT) }}"
       - name: Setup Docker credentials
-        env:
-          PROJECT_ID: ${{ steps.auth.outputs.project_id }}
         run: |-
-          gcloud auth configure-docker ${GAR_LOCATION}-docker.pkg.dev --project ${PROJECT_ID}
+          gcloud auth configure-docker ${GCLOUD_LOCATION}-docker.pkg.dev --project ${GCLOUD_PROJECT}
       - name: Setup GKE credentials
         run: |-
           gcloud container clusters get-credentials "${GKE_CLUSTER}" --zone "${GKE_ZONE}"
-      # - name: Set docker image
-      #   id: docker-image
-      #   run: |-
-      #     echo "::set-output name=image::${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}"
-      # - id: buildx
-      #   name: Set up Docker Buildx
-      #   uses: docker/setup-buildx-action@v2
-      #   with:
-      #     install: true
       - id: docker-cache
         name: Cache Docker layers
         uses: actions/cache@v3
@@ -55,34 +44,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
       - id: Builder
-        #   name: Set up Docker Buildx
-        #   uses: docker/setup-buildx-action
-        #   with:
-        #     context: .
-        #     push: true
-        #     tags: ${{ steps.docker-image.outputs.image }}
-        #     cache-from: type=gha
-        #     cache-to: type=gha,mode=max
         name: Create docker builder
         run: |-
           docker buildx create --name container --driver docker-container
           docker buildx use container
       - id: build-push
-        # name: Build and push
-        # uses: docker/build-push-action@v3
-        # with:
-        #   context: .
-        #   push: true
-        #   tags: ${GAR_LOCATION}-docker.pkg.dev/${{ steps.auth.outputs.project_id }}/docker/${IMAGE}:${TAG}
         name: Build & push docker image
-        env:
-          PROJECT_ID: ${{ steps.auth.outputs.project_id }}
-          SERVICE_ACCOUNT: "${{ endsWith(github.ref, '/main') && secrets.BUILD_IKOMIDA_PROD_SERVICE_ACOUNT || (endsWith(github.ref, '/hmlg') && secrets.BUILD_IKOMIDA_HMLG_SERVICE_ACOUNT || secrets.BUILD_IKOMIDA_DEV_SERVICE_ACOUNT) }}"
         run: |-
-          DOCKER_IMAGE=${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}
+          DOCKER_IMAGE=${GCLOUD_LOCATION}-docker.pkg.dev/${GCLOUD_PROJECT}/docker/${IMAGE}:${TAG}
           echo "Image: ${DOCKER_IMAGE}"
-          BASE64_SERVICE_ACCOUNT="$(echo "${SERVICE_ACCOUNT}" | base64)"
-          docker buildx build -t "${DOCKER_IMAGE}" . -o "type=registry" --cache-to "type=local,dest=/tmp/.buildx-cache-new,mode=max" --cache-from "type=local,src=/tmp/.buildx-cache" --build-arg GOOGLE_SERVICE_ACCOUNT="${BASE64_SERVICE_ACCOUNT}" --build-arg PROJECT_ID="${PROJECT_ID}" --builder=container
+          BASE64_SERVICE_ACCOUNT="$(cat "${GOOGLE_APPLICATION_CREDENTIALS}" | base64)"
+          docker buildx build -t "${DOCKER_IMAGE}" . -o "type=registry" --cache-to "type=local,dest=/tmp/.buildx-cache-new,mode=max" --cache-from "type=local,src=/tmp/.buildx-cache" --build-arg GOOGLE_SERVICE_ACCOUNT="${BASE64_SERVICE_ACCOUNT}" --build-arg GCLOUD_PROJECT="${GCLOUD_PROJECT}" --builder=container
       - id: update-docker-cache
         name: Move cache
         run: |
@@ -90,7 +62,7 @@ jobs:
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       - name: Deploy
         env:
-          PROJECT_ID: ${{ steps.auth.outputs.project_id }}
+          GCLOUD_PROJECT: ${{ steps.auth.outputs.project_id }}
         run: |-
           kubectl get pods
           kubectl -n ikomida delete deploy contracts-microservice || true
