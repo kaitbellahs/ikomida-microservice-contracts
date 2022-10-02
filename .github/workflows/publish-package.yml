@@ -34,12 +34,43 @@ jobs:
       - name: Setup GKE credentials
         run: |-
           gcloud container clusters get-credentials "${GKE_CLUSTER}" --zone "${GKE_ZONE}"
+      # - name: Set docker image
+      #   id: docker-image
+      #   run: |-
+      #     echo "::set-output name=image::${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}"
+      # - id: buildx
+      #   name: Set up Docker Buildx
+      #   uses: docker/setup-buildx-action@v2
+      #   with:
+      #     install: true
+      - id: docker-cache
+        name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - id: Builder
+        #   name: Set up Docker Buildx
+        #   uses: docker/setup-buildx-action
+        #   with:
+        #     context: .
+        #     push: true
+        #     tags: ${{ steps.docker-image.outputs.image }}
+        #     cache-from: type=gha
+        #     cache-to: type=gha,mode=max
         name: Create docker builder
         run: |-
           docker buildx create --name container --driver docker-container
           docker buildx use container
-      - id: Docker
+      - id: build-push
+        # name: Build and push
+        # uses: docker/build-push-action@v3
+        # with:
+        #   context: .
+        #   push: true
+        #   tags: ${GAR_LOCATION}-docker.pkg.dev/${{ steps.auth.outputs.project_id }}/docker/${IMAGE}:${TAG}
         name: Build & push docker image
         env:
           PROJECT_ID: ${{ steps.auth.outputs.project_id }}
@@ -48,7 +79,12 @@ jobs:
           DOCKER_IMAGE=${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}
           echo "Image: ${DOCKER_IMAGE}"
           BASE64_SERVICE_ACCOUNT="$(echo "${SERVICE_ACCOUNT}" | base64)"
-          docker buildx build -o type=registry --cache-to=type=registry --cache-from=type=registry  --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg GOOGLE_SERVICE_ACCOUNT="${BASE64_SERVICE_ACCOUNT}" --build-arg PROJECT_ID="${PROJECT_ID}" --builder=container -t "${DOCKER_IMAGE}" .
+          docker buildx build -o type=registry --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max --cache-from=type=local,src=/tmp/.buildx-cache --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg GOOGLE_SERVICE_ACCOUNT="${BASE64_SERVICE_ACCOUNT}" --build-arg PROJECT_ID="${PROJECT_ID}" --builder=container -t "${DOCKER_IMAGE}" .
+      - id: update-docker-cache
+        name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
       - name: Deploy
         env:
           PROJECT_ID: ${{ steps.auth.outputs.project_id }}
