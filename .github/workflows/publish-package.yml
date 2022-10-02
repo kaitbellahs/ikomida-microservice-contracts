@@ -33,13 +33,13 @@ jobs:
         env:
           DOCKER_IMAGE: ${GCLOUD_LOCATION}-docker.pkg.dev/${GCLOUD_PROJECT}/docker/${IMAGE}:${TAG}")
         run: |-
-          echo GITHUB_ENV: $GITHUB_ENV
+          echo "GITHUB_ENV: ${cat $GITHUB_ENV)""
           echo "PROJECT_ID=$(echo $GCLOUD_PROJECT})" >> $GITHUB_ENV
-          echo GITHUB_ENV: $GITHUB_ENV
+          echo "GITHUB_ENV: ${cat $GITHUB_ENV)"
           echo "DOCKER_IMAGE=$(echo $DOCKER_IMAGE)" >> $GITHUB_ENV
-          echo GITHUB_ENV: $GITHUB_ENV
+          echo "GITHUB_ENV: ${cat $GITHUB_ENV)"
           echo "BASE64_SERVICE_ACCOUNT=$(cat ${GOOGLE_APPLICATION_CREDENTIALS} | base64)" >> $GITHUB_ENV
-          echo GITHUB_ENV: $GITHUB_ENV
+          echo "GITHUB_ENV: ${cat $GITHUB_ENV)"
       - name: Setup Docker credentials
         run: |-
           gcloud auth configure-docker ${GCLOUD_LOCATION}-docker.pkg.dev --project ${GCLOUD_PROJECT}
