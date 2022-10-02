@@ -39,6 +39,14 @@ jobs:
         run: |-
           docker buildx create --name container --driver docker-container
           docker buildx use container
+      - id: Docker-cache
+        name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-latest
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - id: Docker
         name: Build & push docker image
         env:
@@ -48,7 +56,7 @@ jobs:
           DOCKER_IMAGE=${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}
           echo "Image: ${DOCKER_IMAGE}"
           BASE64_SERVICE_ACCOUNT="$(echo "${SERVICE_ACCOUNT}" | base64)"
-          docker buildx build -o type=registry --cache-to=type=gha --cache-from=type=gha --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg GOOGLE_SERVICE_ACCOUNT="${BASE64_SERVICE_ACCOUNT}" --build-arg PROJECT_ID="${PROJECT_ID}" --builder=container -t "${DOCKER_IMAGE}" .
+          docker buildx build -o type=registry --cache-from "type=local,src=/tmp/.buildx-cache" --cache-to "type=local,dest=/tmp/.buildx-cache" --build-arg BUILDKIT_INLINE_CACHE=1 --build-arg GOOGLE_SERVICE_ACCOUNT="${BASE64_SERVICE_ACCOUNT}" --build-arg PROJECT_ID="${PROJECT_ID}" --builder=container -t "${DOCKER_IMAGE}" .
       - name: Deploy
         env:
           PROJECT_ID: ${{ steps.auth.outputs.project_id }}
