@@ -82,7 +82,7 @@ jobs:
           DOCKER_IMAGE=${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}
           echo "Image: ${DOCKER_IMAGE}"
           BASE64_SERVICE_ACCOUNT="$(echo "${SERVICE_ACCOUNT}" | base64)"
-          docker buildx build -o type=registry --cache-to "type=local,dest=/tmp/.buildx-cache-new,mode=max" --cache-from "type=local,src=/tmp/.buildx-cache" --build-arg --build-arg GOOGLE_SERVICE_ACCOUNT="${BASE64_SERVICE_ACCOUNT}" --build-arg PROJECT_ID="${PROJECT_ID}" --builder=container -t "${DOCKER_IMAGE}" .
+          docker buildx build -t "${DOCKER_IMAGE}" . -o "type=registry" --cache-to "type=local,dest=/tmp/.buildx-cache-new,mode=max" --cache-from "type=local,src=/tmp/.buildx-cache" --build-arg GOOGLE_SERVICE_ACCOUNT="${BASE64_SERVICE_ACCOUNT}" --build-arg PROJECT_ID="${PROJECT_ID}" --builder=container
       - id: update-docker-cache
         name: Move cache
         run: |
