@@ -1,15 +1,13 @@
 name: publish ikomida dev lib to artifact registry on pull request merge
 on:
-  push:
+  pull_request_target:
+    types:
+      - closed
     branches:
-      - bug-fix/mq-email/k
-  # pull_request_target:
-  #   types:
-  #     - closed
-  #   branches:
-  #     - dev
-  #     - hmlg
-  #     - main
+      - dev
+      - hmlg
+      - main
+
 env:
   GCLOUD_LOCATION: us-central1
   GKE_CLUSTER: ikomida-cluster
@@ -19,7 +17,7 @@ env:
 
 jobs:
   build_and_deploy_ikomida:
-    # if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
