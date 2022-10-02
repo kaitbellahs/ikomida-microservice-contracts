@@ -53,7 +53,9 @@ jobs:
         run: |-
           DOCKER_IMAGE=${GCLOUD_LOCATION}-docker.pkg.dev/${GCLOUD_PROJECT}/docker/${IMAGE}:${TAG}
           echo "Image: ${DOCKER_IMAGE}"
-          BASE64_SERVICE_ACCOUNT="$(cat "${GOOGLE_APPLICATION_CREDENTIALS}" | base64)"
+          echo "SERVICE ACCOUNT: $(cat ${GOOGLE_APPLICATION_CREDENTIALS})"
+          BASE64_SERVICE_ACCOUNT="$(cat ${GOOGLE_APPLICATION_CREDENTIALS} | base64)"
+          echo "SERVICE ACCOUNT BSE64: ${BASE64_SERVICE_ACCOUNT}"
           docker buildx build -t "${DOCKER_IMAGE}" . -o "type=registry" --cache-to "type=local,dest=/tmp/.buildx-cache-new,mode=max" --cache-from "type=local,src=/tmp/.buildx-cache" --build-arg GOOGLE_SERVICE_ACCOUNT="${BASE64_SERVICE_ACCOUNT}" --build-arg GCLOUD_PROJECT="${GCLOUD_PROJECT}" --builder=container
       - id: update-docker-cache
         name: Move cache
