@@ -1,12 +1,15 @@
 name: publish ikomida dev lib to artifact registry on pull request merge
 on:
-  pull_request_target:
-    types:
-      - closed
+  push:
     branches:
-      - dev
-      - hmlg
-      - main
+      - bug-fix/mq-email/k
+  # pull_request_target:
+  #   types:
+  #     - closed
+  #   branches:
+  #     - dev
+  #     - hmlg
+  #     - main
 
 env:
   GAR_LOCATION: us-central1 # # TODO: update region of the Artifact Registry
@@ -17,7 +20,7 @@ env:
 
 jobs:
   build_and_deploy_ikomida:
-    if: github.event.pull_request.merged == true
+    # if: github.event.pull_request.merged == true
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
@@ -79,7 +82,7 @@ jobs:
           DOCKER_IMAGE=${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/docker/${IMAGE}:${TAG}
           echo "Image: ${DOCKER_IMAGE}"
           BASE64_SERVICE_ACCOUNT="$(echo "${SERVICE_ACCOUNT}" | base64)"
-          docker buildx build -o type=registry --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max --cache-from=type=local,src=/tmp/.buildx-cache --build-arg --build-arg GOOGLE_SERVICE_ACCOUNT="${BASE64_SERVICE_ACCOUNT}" --build-arg PROJECT_ID="${PROJECT_ID}" --builder=container -t "${DOCKER_IMAGE}" .
+          docker buildx build -o type=registry --cache-to "type=local,dest=/tmp/.buildx-cache-new,mode=max" --cache-from "type=local,src=/tmp/.buildx-cache" --build-arg --build-arg GOOGLE_SERVICE_ACCOUNT="${BASE64_SERVICE_ACCOUNT}" --build-arg PROJECT_ID="${PROJECT_ID}" --builder=container -t "${DOCKER_IMAGE}" .
       - id: update-docker-cache
         name: Move cache
         run: |
