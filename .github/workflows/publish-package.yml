@@ -30,10 +30,12 @@ jobs:
         with:
           credentials_json: "${{ endsWith(github.ref, '/main') && secrets.BUILD_IKOMIDA_PROD_SERVICE_ACOUNT || (endsWith(github.ref, '/hmlg') && secrets.BUILD_IKOMIDA_HMLG_SERVICE_ACOUNT || secrets.BUILD_IKOMIDA_DEV_SERVICE_ACOUNT) }}"
       - name: Export ENV
+        env:
+          DOCKER_IMAGE: ${GCLOUD_LOCATION}-docker.pkg.dev/${GCLOUD_PROJECT}/docker/${IMAGE}:${TAG}")
         run: |-
-          echo "PROJECT_ID=\"${GCLOUD_PROJECT}\"" >> $GITHUB_ENV
-          echo "DOCKER_IMAGE=\"${GCLOUD_LOCATION}-docker.pkg.dev/${GCLOUD_PROJECT}/docker/${IMAGE}:${TAG}\"" >> $GITHUB_ENV
-          echo "BASE64_SERVICE_ACCOUNT=\"$(cat ${GOOGLE_APPLICATION_CREDENTIALS} | base64)\"" >> $GITHUB_ENV
+          echo "PROJECT_ID=$(echo $GCLOUD_PROJECT})" >> $GITHUB_ENV
+          echo "DOCKER_IMAGE=$(echo $DOCKER_IMAGE)" >> $GITHUB_ENV
+          echo "BASE64_SERVICE_ACCOUNT=$(cat ${GOOGLE_APPLICATION_CREDENTIALS} | base64)" >> $GITHUB_ENV
       - name: Setup Docker credentials
         run: |-
           gcloud auth configure-docker ${GCLOUD_LOCATION}-docker.pkg.dev --project ${GCLOUD_PROJECT}
