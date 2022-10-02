@@ -26,33 +26,6 @@ jobs:
         uses: "google-github-actions/auth@v0"
         with:
           credentials_json: "${{ endsWith(github.ref, '/main') && secrets.BUILD_IKOMIDA_PROD_SERVICE_ACOUNT || (endsWith(github.ref, '/hmlg') && secrets.BUILD_IKOMIDA_HMLG_SERVICE_ACOUNT || secrets.BUILD_IKOMIDA_DEV_SERVICE_ACOUNT) }}"
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-      - uses: actions/cache@v3
-        id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-      - name: Auth npm with artifactregistry and set gcloud project id
-        env:
-          PROJECT_ID: ${{ steps.auth.outputs.project_id }}
-        run: |
-          echo "Selected gcloud project id: ${PROJECT_ID}"
-          rm .npmrc || true
-          echo "@ikomida:registry=https://${GAR_LOCATION}-npm.pkg.dev/${PROJECT_ID}/node/" >> .npmrc
-          echo "//${GAR_LOCATION}-npm.pkg.dev/${PROJECT_ID}/node/:always-auth=true" >> .npmrc
-          yarn glogin
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-      - name: Prepare ikomida code
-        run: |
-          yarn format
-          yarn lint
-      - name: Build ikomida code
-        run: yarn build
       - name: Setup Docker credentials
         env:
           PROJECT_ID: ${{ steps.auth.outputs.project_id }}
