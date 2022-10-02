@@ -20,7 +20,7 @@ env:
 
 jobs:
   build_and_deploy_ikomida:
-    if: github.event.pull_request.merged == true
+    # if: github.event.pull_request.merged == true
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
