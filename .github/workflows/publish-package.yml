@@ -10,7 +10,6 @@ on:
   #     - dev
   #     - hmlg
   #     - main
-
 env:
   GCLOUD_LOCATION: us-central1
   GKE_CLUSTER: ikomida-cluster
