@@ -246,19 +246,17 @@ export default class Contracts {
         },
       });
 
-      const bannedNames: string[] = (
-        JSON.parse(
-          (
-            await DBModels.SettingModel.findOne({
-              where: {
-                name: 'bannedNames',
-                active: true,
-              },
-            })
-          )?.value ?? '[]',
-        ) as string[]
-      );
-      bannedNames.push(...this.bannedNames)
+      const bannedNames: string[] = JSON.parse(
+        (
+          await DBModels.SettingModel.findOne({
+            where: {
+              name: 'bannedNames',
+              active: true,
+            },
+          })
+        )?.value ?? '[]',
+      ) as string[];
+      bannedNames.push(...this.bannedNames);
       if (contractModel || bannedNames.includes(bundle(payload.contractName ?? ''))) {
         const error = new Utils.iKomidaError(
           Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_VALIDATE_PHONE_VALIDATION_INVALID_CONTRACT,
