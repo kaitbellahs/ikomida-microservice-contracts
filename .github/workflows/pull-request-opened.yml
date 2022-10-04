@@ -1,10 +1,14 @@
-name: build and test ikomida dev service before pull request merge
+name: build and test ikomida contracts service before pull request merge
 on:
   pull_request:
     branches:
       - dev
       - hmlg
       - main
+
+env:
+  GCLOUD_LOCATION: us-central1
+
 jobs:
   build_ikomida:
     runs-on: self-hosted
@@ -14,12 +18,12 @@ jobs:
         name: "Authenticate to Google Cloud"
         uses: "google-github-actions/auth@v0"
         with:
-          credentials_json: "${{ endsWith(github.ref, '/main') && secrets.BUILD_IKOMIDA_PROD_SERVICE_ACOUNT || (endsWith(github.ref, '/hmlg') && secrets.BUILD_IKOMIDA_HMLG_SERVICE_ACOUNT || secrets.BUILD_IKOMIDA_DEV_SERVICE_ACOUNT) }}"
+          credentials_json: "${{ endsWith(github.ref, '/main') && secrets.IKOMIDA_PROD_GCLOUD_SERVICE_ACOUNT || (endsWith(github.ref, '/hmlg') && secrets.IKOMIDA_HMLG_GCLOUD_SERVICE_ACOUNT || secrets.IKOMIDA_DEV_GCLOUD_SERVICE_ACOUNT) }}"
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn cache dir)"
       - uses: actions/cache@v3
-        id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+        id: yarn-cache
         with:
           path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
           key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
@@ -28,26 +32,23 @@ jobs:
       - name: Auth npm with artifactregistry and set gcloud project id
         env:
           PROJECT_ID: ${{ steps.auth.outputs.project_id }}
-          SERVICE_ACCOUNT: "${{ endsWith(github.ref, '/main') && secrets.BUILD_IKOMIDA_PROD_SERVICE_ACOUNT || (endsWith(github.ref, '/hmlg') && secrets.BUILD_IKOMIDA_HMLG_SERVICE_ACOUNT || secrets.BUILD_IKOMIDA_DEV_SERVICE_ACOUNT) }}"
         run: |-
-          BASE64_SERVICE_ACCOUNT=$(echo "${SERVICE_ACCOUNT}" | base64)
-          echo "BASE64_SERVICE_ACCOUNT: ${BASE64_SERVICE_ACCOUNT}"
           echo "Selected gcloud project id: ${PROJECT_ID}"
           rm .npmrc || true
-          echo "@ikomida:registry=https://us-central1-npm.pkg.dev/${PROJECT_ID}/node/" >> .npmrc
-          echo "//us-central1-npm.pkg.dev/${PROJECT_ID}/node/:always-auth=true" >> .npmrc
+          echo "@ikomida:registry=https://${GCLOUD_LOCATION}-npm.pkg.dev/${PROJECT_ID}/node/" >> .npmrc
+          echo "//${GCLOUD_LOCATION}-npm.pkg.dev/${PROJECT_ID}/node/:always-auth=true" >> .npmrc
           yarn glogin
       - name: Check service version
         run: |
           SERVICE_NAME=$(node --eval="process.stdout.write(require('./package.json').name)")
           SERVICE_VERSION=$(node --eval="process.stdout.write(require('./package.json').version)")
           SERVICE_VERSION_REMOTE=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
-          if [[ $SERVICE_VERSION > $SERVICE_VERSION_REMOTE ]]; then
-            echo "Service package version is correct"
-            exit 0
-          else 
-            echo "Error: you mast update service package version"
-            exit 1
+          if { echo "$SERVICE_VERSION"; echo "$SERVICE_VERSION_REMOTE"; } | sort --version-sort --check; then
+              echo "Error: you mast update lib package version"
+              exit 1
+          else
+              echo "Lib package version is correct"
+              exit 0
           fi
       - name: Install dependencies
         run: yarn install --frozen-lockfile
