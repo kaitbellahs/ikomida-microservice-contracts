@@ -23,6 +23,7 @@ export default class Plans {
           planModel.discountType ?? Types.Types.TDiscount.NO,
           planModel.staff ?? -1,
           planModel.products ?? -1,
+          planModel.productOptions ?? -1,
           planModel.categories ?? -1,
           planModel.pushNotifications ?? -1,
           planModel.orders ?? -1,
