@@ -213,10 +213,10 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/object-schema/-/object-schema-1.2.1.tgz#b520529ec21d8e5945a1851dfd1c32e94e39ff45"
   integrity sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==
 
-"@ikomida/shared-backend@^1.0.22":
-  version "1.0.22"
-  resolved "https://us-central1-npm.pkg.dev/ikomida-dev/node/@ikomida/shared-backend/-/@ikomida/shared-backend-1.0.22.tgz#2c8bf2aede602cea1ea29940cab09eaebe15d02d"
-  integrity sha512-W0UiirhC5UL3s5KQjD/yojIjBkTzEswZC7MS+bqZ+tGb/CaU1F7T3Tue6gKdO0jALpqCt134AS8i7UAz+m9TCA==
+"@ikomida/shared-backend@^1.0.23":
+  version "1.0.23"
+  resolved "https://us-central1-npm.pkg.dev/ikomida-dev/node/@ikomida/shared-backend/-/@ikomida/shared-backend-1.0.23.tgz#06aa6ea948b0e05ce7ead2bc02aca662a8528f71"
+  integrity sha512-CCUR0dzVKC6E/V1iqu5WVzG6Xa7CR1tXXiJJqmaaYAqQZJCz7UYJEvnwFq1vazSeB2eSLLooqm6NDpZ+F9fx1w==
   dependencies:
     "@ikomida/shared-logics" "^0.2.3"
     "@ikomida/shared-types" "^1.2.8"
@@ -643,10 +643,10 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-12.20.24.tgz#c37ac69cb2948afb4cef95f424fa0037971a9a5c"
   integrity sha512-yxDeaQIAJlMav7fH5AQqPH1u8YIuhYJXYBzxaQ4PifsU0GDO38MSdmEDeRlIxrKbC6NbEaaEHDanWb+y30U8SQ==
 
-"@types/node@^18.8.5":
-  version "18.8.5"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.8.5.tgz#6a31f820c1077c3f8ce44f9e203e68a176e8f59e"
-  integrity sha512-Bq7G3AErwe5A/Zki5fdD3O6+0zDChhg671NfPjtIcbtzDNZTv4NPKMRFr7gtYPG7y+B8uTiNK4Ngd9T0FTar6Q==
+"@types/node@^18.11.0":
+  version "18.11.0"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.11.0.tgz#f38c7139247a1d619f6cc6f27b072606af7c289d"
+  integrity sha512-IOXCvVRToe7e0ny7HpT/X9Rb2RYtElG1a+VshjwT00HxrM2dWBApHQoqsI6WiY7Q03vdf2bCrIGzVrkF/5t10w==
 
 "@types/qs@*":
   version "6.9.7"
