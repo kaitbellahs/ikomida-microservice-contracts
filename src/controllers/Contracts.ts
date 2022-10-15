@@ -473,7 +473,7 @@ export default class Contracts {
       })
       try {
         if (userModel) {
-          const emailMessage = new Utils.Email(
+          const message = new Utils.Email(
             Utils.Email.VENDOR_REGISTRATION_SUCCESSFULL,
             'iKomida',
             userModel?.name,
@@ -483,10 +483,9 @@ export default class Contracts {
             'iKomida',
             this.host
           )
-
-          const emailPayload = new Types.Classes.CAMQPPayload<Types.Classes.CEmail>()
+          const emailPayload = new Types.Classes.CAMQPPayload<Types.Classes.CAMQPPayloadObject>()
           emailPayload.method = 'send'
-          const payloadEmail: Types.Classes.CEmail = Types.Classes.CEmail.fromObject({
+          const messagePayload: Types.Classes.CEmail = Types.Classes.CEmail.fromObject({
             from: {
               email: `no-replay@ikomida.com`,
               name: `iKomida`
@@ -495,9 +494,9 @@ export default class Contracts {
               email: userModel?.email,
               name: `${userModel?.name} ${userModel?.lastName}`
             },
-            message: emailMessage
+            message
           })
-          emailPayload.object = payloadEmail
+          emailPayload.object = messagePayload
           const amqp = new Domain.RabbitMQ(this.logger)
           await amqp?.publish(Domain.RabbitMQ.EMAIL_QUEUE, emailPayload)
 
