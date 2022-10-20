@@ -1,6 +1,6 @@
 {
   "name": "ikomida-contracts-service",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "ikomida contracts service",
   "private": true,
   "module": "build/service.js",
