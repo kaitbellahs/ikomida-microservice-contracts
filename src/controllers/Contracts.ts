@@ -293,7 +293,8 @@ export default class Contracts {
                 plan?.price ?? 0,
                 plan?.discount ?? 0,
                 plan?.discountType ?? Types.Types.TDiscount.NO
-              )
+              ),
+            dueDateAfterXDays: plan?.dueDateAfterXDays ?? 0
           },
           ikomidaID,
           payment: {
