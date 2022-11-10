@@ -4,12 +4,12 @@ import {
   signData,
   Logics,
   validateSignature,
-  Types,
   GateWays,
   Utils,
   DBModels,
   BackendTypes,
-  Domain
+  Domain,
+  Types
 } from '@ikomida/shared-backend'
 import crypto from 'crypto'
 
@@ -294,7 +294,7 @@ export default class Contracts {
                 plan?.discount ?? 0,
                 plan?.discountType ?? Types.Types.TDiscount.NO
               ),
-            dueDateAfterXDays: plan?.dueDateAfterXDays ?? 0
+            dueDateAfterXDays: payload?.plan?.dueDateAfterXDays ?? 0
           },
           ikomidaID,
           payment: {
@@ -354,6 +354,7 @@ export default class Contracts {
         },
         { transaction }
       )
+      const location: Types.Classes.CLocation = await Utils.GoogleAdmin.getGeocoding(payload.address)
       await contractModel?.$create(
         'address',
         {
@@ -367,7 +368,11 @@ export default class Contracts {
           city: payload.address?.city,
           distance: 0,
           duration: 0,
-          stat: payload.address?.stat
+          stat: payload.address?.stat,
+          coordinates: BackendTypes.CGeometry.init(BackendTypes.TGeometry.POINT, [
+            location.latitude ?? 0,
+            location.longitude ?? 0
+          ]).toJSON()
         },
         { transaction }
       )
