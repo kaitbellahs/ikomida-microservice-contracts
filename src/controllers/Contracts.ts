@@ -294,7 +294,7 @@ export default class Contracts {
                 plan?.discount ?? 0,
                 plan?.discountType ?? Types.Types.TDiscount.NO
               ),
-            dueDateAfterXDays: payload?.plan?.dueDateAfterXDays ?? 0
+            dueDateAfterXDays: payload?.plan?.dueDateAfterXDays ? plan?.dueDateAfterXDays : 0
           },
           ikomidaID,
           payment: {
