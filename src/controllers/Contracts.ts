@@ -11,7 +11,9 @@ import {
   Domain,
   Types
 } from '@ikomida/shared-backend'
+import { IiKomidaErrorModel } from '@ikomida/shared-backend/lib/src/Utils/iKomidaError'
 import crypto from 'crypto'
+import _ from 'lodash'
 
 const host: any = {
   development: 'https://dev.ikomida.com/',
@@ -20,6 +22,11 @@ const host: any = {
 }
 
 export default class Contracts {
+  private IKOMIDA_CONTRACT_SERVICE_INVALID_BILLING_TYPE: IiKomidaErrorModel = {
+    code: 'CMS001',
+    message: `Para continuar precisa escolher um meio de pagamento!`
+  }
+
   paymentGateway?: GateWays.Asaas
   randCodes: Utils.RandCodes
   logger: Utils.Logger
@@ -43,7 +50,10 @@ export default class Contracts {
   ]
   host: string
 
+  isProduction = false
+
   constructor(logger: Utils.Logger) {
+    this.isProduction = process.env.NODE_ENV === 'production'
     this.logger = logger
     this.host = host[process.env.NODE_ENV ?? 'development']
     this.paymentGateway = new GateWays.Asaas(this.logger)
@@ -110,6 +120,7 @@ export default class Contracts {
       payload.phoneValidationCode = code
       const signatureObject = payload.toJSON()
       delete signatureObject.signature
+      delete signatureObject.billingType
       delete signatureObject.payment
       const signature = await signData(signatureObject)
       const validationObject = {
@@ -216,6 +227,7 @@ export default class Contracts {
       }
       const signatureObject = payload.toJSON()
       delete signatureObject.signature
+      delete signatureObject.billingType
       delete signatureObject.payment
       if (await validateSignature(signatureObject, payload.signature ?? '')) {
         const phoneValidationCodeModels = await DBModels.PhoneValidationCodeModel.findAll({
@@ -245,6 +257,9 @@ export default class Contracts {
     let transaction: Domain.SqlDB.Transaction | undefined = undefined
     try {
       const payload: Types.Classes.CContract = Types.Classes.CContract.fromObject(input)
+      if (!payload.billingType || !Types.Types.Asaas.TAsaasBilling.methods.includes(payload.billingType)) {
+        throw new Utils.iKomidaError(this.IKOMIDA_CONTRACT_SERVICE_INVALID_BILLING_TYPE)
+      }
       const ikomidaID = `com.ikomida.br.${bundle(payload.contractName ?? '')}`
       const plan = await this.selectPlan(payload)
       const validatePhoneValidationCode = await this.validatePhoneValidationCode(input)
@@ -271,6 +286,7 @@ export default class Contracts {
       const validity = Logics.Finances.pad(payload.payment?.validity ?? '', 4)
       const subscriptionObject: Types.Classes.Asaas.CAsaasSubscription =
         Types.Classes.Asaas.CAsaasSubscription.fromObject({
+          billingType: payload.billingType,
           customer: {
             name: `${payload.name} ${payload.lastName}`,
             email: payload.email,
@@ -344,6 +360,7 @@ export default class Contracts {
       const contractPaymentSignature = await contractModel?.$create<DBModels.ContractPaymentSignatureModel>(
         'contractPaymentSignature',
         {
+          billingType: payload.billingType,
           gateway: this.paymentGateway?.name,
           subscriptionID: doRecurringSubscription?.data.id,
           status: doRecurringSubscription?.data.status,
@@ -432,32 +449,11 @@ export default class Contracts {
 
       await transaction.commit()
       transaction = undefined
-      let lastDueDate
-      let nextDueDate
-      const payments = await this.paymentGateway?.getPayments(doRecurringSubscription?.data.id)
-      for (const paymentObject of payments?.data ?? []) {
-        try {
-          const paymentStatus = paymentObject?.status
-          const originalDate = Logics.DateTime?.parseAsaasDate(paymentObject?.dueDate)
-          const todayDate = Logics.DateTime?.parseAsaasDate(Logics.DateTime?.localToday())
-          const acceptedPaymentStatus =
-            paymentStatus &&
-            [Types.Types.TAsaasPaymentStatus.PENDING, Types.Types.TAsaasPaymentStatus.CONFIRMED].includes(paymentStatus)
-          const pendingStatus = paymentStatus && [Types.Types.TAsaasPaymentStatus.PENDING].includes(paymentStatus)
-          if (acceptedPaymentStatus && originalDate <= todayDate && (!lastDueDate || originalDate > lastDueDate)) {
-            lastDueDate = originalDate
-          }
-          if (pendingStatus && originalDate > todayDate && (!nextDueDate || originalDate < nextDueDate)) {
-            nextDueDate = originalDate
-          }
-        } catch (exception: any) {
-          const error = new Utils.iKomidaError(
-            Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_NEW_CONTRACT_EXCEPTION,
-            exception
-          )
-          error.log(this.logger)
-        }
-      }
+      const response = await this.paymentGateway?.getPayments(doRecurringSubscription?.data.id)
+      const payments = _.sortBy(response?.data ?? [], 'originalDueDate')
+      const currentPayment = payments[0]
+      const lastDueDate = Logics.DateTime?.parseAsaasDate(currentPayment?.dueDate)
+      const nextDueDate = Logics.DateTime?.parseAsaasDate(payments[1]?.dueDate)
       if (lastDueDate && contractPaymentSignature) {
         contractPaymentSignature.lastDueDate = lastDueDate
       }
@@ -466,8 +462,8 @@ export default class Contracts {
       }
       await contractPaymentSignature?.save()
       await contractModel?.$create('vendorSettings', {
-        restaurantImage: '',
         contractName: payload.contractName,
+        billingType: payload.billingType,
         contractIdentity: Logics.Finances.toNumber(payload.contractIdentity),
         email: payload.email,
         name: payload.name,
@@ -528,7 +524,24 @@ export default class Contracts {
         )
         error.log(this.logger)
       }
-      if (userModel) return new Utils.Return(true, null)
+      const contractResult = Types.Classes.CContractResult.fromObject({
+        ikomidaID: contractModel?.ikomidaID,
+        contractName: contractModel?.contractName,
+        name: contractModel?.name,
+        lastName: contractModel?.lastName,
+        plan: Types.Classes.CPlan.init(plan?.name ?? '', 0, 0, Types.Types.TDiscount.NO, 0),
+        billingType: payload?.billingType
+      })
+      if (currentPayment.id && payload.billingType === Types.Types.Asaas.TAsaasBilling.PIX) {
+        const response = await this.paymentGateway?.paymentQrCode(currentPayment.id)
+        if (response?.success) {
+          contractResult.pix = response.data
+        }
+      }
+      if (payload.billingType === Types.Types.Asaas.TAsaasBilling.BOLETO) {
+        contractResult.bankSlipUrl = currentPayment.bankSlipURL ?? `https://${this.isProduction ? 'www' : 'sandbox'}.asaas.com/b/pdf/${currentPayment.id?.replace('pay_', '')}`
+      }
+      if (userModel) return new Utils.Return(true, contractResult)
     } catch (exception: any) {
       if (transaction) {
         await transaction?.rollback()
