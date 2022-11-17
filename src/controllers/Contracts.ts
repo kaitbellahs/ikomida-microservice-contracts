@@ -539,7 +539,9 @@ export default class Contracts {
         }
       }
       if (payload.billingType === Types.Types.Asaas.TAsaasBilling.BOLETO) {
-        contractResult.bankSlipUrl = currentPayment.bankSlipURL ?? `https://${this.isProduction ? 'www' : 'sandbox'}.asaas.com/b/pdf/${currentPayment.id?.replace('pay_', '')}`
+        contractResult.bankSlipUrl =
+          currentPayment.bankSlipURL ??
+          `https://${this.isProduction ? 'www' : 'sandbox'}.asaas.com/b/pdf/${currentPayment.id?.replace('pay_', '')}`
       }
       if (userModel) return new Utils.Return(true, contractResult)
     } catch (exception: any) {
