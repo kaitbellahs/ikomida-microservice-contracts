@@ -101,7 +101,7 @@ export default class Contracts {
         )
       }
       const ikomidaID = `com.ikomida.br.${bundle(payload.contractName ?? '')}`
-      const role = BackendTypes.Roles.VENDOR
+      const role = Types.Types.TRoles.VENDOR
       const plan = await this.selectPlan(payload)
       if (!plan) {
         throw new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_OBJECT_OR_PLANE_MODIFIED)
@@ -198,7 +198,7 @@ export default class Contracts {
         )
       }
       const ikomidaID = `com.ikomida.br.${bundle(payload.contractName ?? '')}`
-      const role = BackendTypes.Roles.VENDOR
+      const role = Types.Types.TRoles.VENDOR
       const plan = await this.selectPlan(payload)
       if (!plan) {
         throw new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_OBJECT_OR_PLANE_MODIFIED)
@@ -376,7 +376,7 @@ export default class Contracts {
         'address',
         {
           kind: Types.Types.TAddress.PROFESSIONAL,
-          role: BackendTypes.Roles.VENDOR,
+          role: Types.Types.TRoles.VENDOR,
           postalCode: payload.address?.postalCode,
           street: payload.address?.street,
           number: payload.address?.number,
@@ -387,8 +387,8 @@ export default class Contracts {
           duration: 0,
           stat: payload.address?.stat,
           coordinates: BackendTypes.CGeometry.init(BackendTypes.TGeometry.POINT, [
-            location.latitude ?? 0,
-            location.longitude ?? 0
+            location?.latitude ?? 0,
+            location?.longitude ?? 0
           ]).toJSON()
         },
         { transaction }
@@ -407,7 +407,7 @@ export default class Contracts {
         'user',
         {
           avatar: '',
-          role: BackendTypes.Roles.VENDOR,
+          role: Types.Types.TRoles.VENDOR,
           name: payload.name,
           lastName: payload.lastName,
           email: payload.email,
