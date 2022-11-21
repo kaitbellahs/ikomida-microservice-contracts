@@ -63,6 +63,15 @@ export default class Contracts {
   async createPhoneValidation(input: any) {
     try {
       const payload: Types.Classes.CContract = Types.Classes.CContract.fromObject(input)
+      const plan = await this.selectPlan(payload)
+      if (!plan || (plan?.price ?? 0) -
+        Logics.Finances.calcDiscount(
+          plan?.price ?? 0,
+          plan?.discount ?? 0,
+          plan?.discountType ?? Types.Types.TDiscount.NO
+        ) !== payload.plan?.price) {
+        throw new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_OBJECT_OR_PLANE_MODIFIED)
+      }
       if ((payload.contractName?.length ?? 0) <= 2) {
         throw new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_NAME)
       }
@@ -102,10 +111,7 @@ export default class Contracts {
       }
       const ikomidaID = `com.ikomida.br.${bundle(payload.contractName ?? '')}`
       const role = Types.Types.TRoles.VENDOR
-      const plan = await this.selectPlan(payload)
-      if (!plan) {
-        throw new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_OBJECT_OR_PLANE_MODIFIED)
-      }
+
       const contractModel = await DBModels.ContractModel.findOne({
         where: {
           ikomidaID
@@ -200,7 +206,12 @@ export default class Contracts {
       const ikomidaID = `com.ikomida.br.${bundle(payload.contractName ?? '')}`
       const role = Types.Types.TRoles.VENDOR
       const plan = await this.selectPlan(payload)
-      if (!plan) {
+      if (!plan || (plan?.price ?? 0) -
+        Logics.Finances.calcDiscount(
+          plan?.price ?? 0,
+          plan?.discount ?? 0,
+          plan?.discountType ?? Types.Types.TDiscount.NO
+        ) !== payload.plan?.price) {
         throw new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_OBJECT_OR_PLANE_MODIFIED)
       }
       const contractModel = await DBModels.ContractModel.findOne({
@@ -262,6 +273,14 @@ export default class Contracts {
       }
       const ikomidaID = `com.ikomida.br.${bundle(payload.contractName ?? '')}`
       const plan = await this.selectPlan(payload)
+      if (!plan || (plan?.price ?? 0) -
+        Logics.Finances.calcDiscount(
+          plan?.price ?? 0,
+          plan?.discount ?? 0,
+          plan?.discountType ?? Types.Types.TDiscount.NO
+        ) !== payload.plan?.price) {
+        throw new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_OBJECT_OR_PLANE_MODIFIED)
+      }
       const validatePhoneValidationCode = await this.validatePhoneValidationCode(input)
       if (!validatePhoneValidationCode?.success) {
         throw new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_NEW_USER_INVALID_PHONE_VALIDATION_CODE)
@@ -563,7 +582,6 @@ export default class Contracts {
     const result = await DBModels.PlanModel.findAndCountAll({
       where: {
         name: payload.plan?.name,
-        price: Logics.Finances.toFinanceNumber(payload.plan?.price),
         active: true
       }
     })
