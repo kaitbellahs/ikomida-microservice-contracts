@@ -42,6 +42,10 @@ app.get('/plans', async (req, res) => {
   const response = await plans?.getPlans()
   res.sendResponse(response)
 })
+app.get('/plan/:id', async (req, res) => {
+  const response = await plans?.getPlan(req.params.id)
+  res.sendResponse(response)
+})
 
 app.all('*', async (req, res) => {
   logger.error(`Contracts endpoint "${req?.url}" not found:`)
