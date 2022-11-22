@@ -64,51 +64,69 @@ export default class Contracts {
     try {
       const payload: Types.Classes.CContract = Types.Classes.CContract.fromObject(input)
       const plan = await this.selectPlan(payload)
-      if (!plan || (plan?.price ?? 0) -
-        Logics.Finances.calcDiscount(
-          plan?.price ?? 0,
-          plan?.discount ?? 0,
-          plan?.discountType ?? Types.Types.TDiscount.NO
-        ) !== payload.plan?.price) {
+
+      if (
+        !plan ||
+        plan?.price !== payload.plan?.price ||
+        Number(payload.plan?.dueDateAfterXDays) > Number(plan.dueDateAfterXDays) ||
+        (plan?.price ?? 0) -
+          Logics.Finances.calcDiscount(
+            plan?.price ?? 0,
+            plan?.discount ?? 0,
+            plan?.discountType ?? Types.Types.TDiscount.NO
+          ) !==
+          payload.plan?.discountedPrice
+      ) {
         throw new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_OBJECT_OR_PLANE_MODIFIED)
       }
+
       if ((payload.contractName?.length ?? 0) <= 2) {
         throw new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_NAME)
       }
+
       if (!Logics.Validations.validateUUID(payload.termId)) {
         throw new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_TERM)
       }
+
       if ((payload.name?.length ?? 0) <= 2) {
         throw new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_NAME)
       }
+
       if ((payload.lastName?.length ?? 0) <= 2) {
         throw new Utils.iKomidaError(
           Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_LAST_NAME
         )
       }
+
       if (!Logics.Validations.validateCNPJ(payload.contractIdentity)) {
         throw new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_CPF)
       }
+
       if (!Logics.Validations.validateCPF(payload.identity)) {
         throw new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_CPF)
       }
+
       if (!Logics.Validations.validateEmail(payload.email)) {
         throw new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_EMAIL)
       }
+
       if (!Logics.Validations.validatePhone(payload.phone)) {
         throw new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_PHONE)
       }
+
       if (!Logics.Validations.validatePassword(payload.password)) {
         throw new Utils.iKomidaError(
           Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_PASSWORD
         )
       }
+
       const [validateAddressCode] = Logics.Validations.validateAddress(payload.address)
       if (!validateAddressCode) {
         throw new Utils.iKomidaError(
           Utils.iKomidaError.IKOMIDA_GATEWAY_SERVICE_CREATE_PHONE_VALIDATION_MISSING_PASSWORD
         )
       }
+
       const ikomidaID = `com.ikomida.br.${bundle(payload.contractName ?? '')}`
       const role = Types.Types.TRoles.VENDOR
 
@@ -122,6 +140,7 @@ export default class Contracts {
           Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_CREATE_PHONE_VALIDATION_INVALID_CONTRACT
         )
       }
+
       const code = Logics.Finances.pad(Math.ceil(Math.random() * 10000), 4)
       payload.phoneValidationCode = code
       const signatureObject = payload.toJSON()
@@ -134,18 +153,19 @@ export default class Contracts {
         code,
         signature
       }
+
       const phoneValidationCodeModel = await DBModels.PhoneValidationCodeModel.create(validationObject)
-      const message = new Utils.SMS(Utils.SMS.VALIDATION_CODE, code, 'iKomida')
-      const smsPayload = new Types.Classes.CAMQPPayload<Types.Classes.CAMQPPayloadObject>()
-      smsPayload.method = 'send'
-      smsPayload.object = new Types.Classes.CAMQPPayloadObject()
-      smsPayload.object.areaCode = String(payload.areaCode)
-      smsPayload.object.phone = payload.phone
-      smsPayload.object.message = message
-      const amqp = new Domain.RabbitMQ(this.logger)
-      await amqp?.publish<Types.Classes.CAMQPPayloadObject>(Domain.RabbitMQ.SMS_QUEUE, smsPayload)
-      await amqp?.close()
       if (phoneValidationCodeModel) {
+        const message = new Utils.SMS(Utils.SMS.VALIDATION_CODE, code, 'iKomida')
+        const smsPayload = new Types.Classes.CAMQPPayload<Types.Classes.CAMQPPayloadObject>()
+        smsPayload.method = 'send'
+        smsPayload.object = new Types.Classes.CAMQPPayloadObject()
+        smsPayload.object.areaCode = String(payload.areaCode)
+        smsPayload.object.phone = payload.phone
+        smsPayload.object.message = message
+        const amqp = new Domain.RabbitMQ(this.logger)
+        await amqp?.publish<Types.Classes.CAMQPPayloadObject>(Domain.RabbitMQ.SMS_QUEUE, smsPayload)
+        await amqp?.close()
         return new Utils.Return(true, signature)
       }
     } catch (exception: any) {
@@ -206,12 +226,18 @@ export default class Contracts {
       const ikomidaID = `com.ikomida.br.${bundle(payload.contractName ?? '')}`
       const role = Types.Types.TRoles.VENDOR
       const plan = await this.selectPlan(payload)
-      if (!plan || (plan?.price ?? 0) -
-        Logics.Finances.calcDiscount(
-          plan?.price ?? 0,
-          plan?.discount ?? 0,
-          plan?.discountType ?? Types.Types.TDiscount.NO
-        ) !== payload.plan?.price) {
+      if (
+        !plan ||
+        plan?.price !== payload.plan?.price ||
+        Number(payload.plan?.dueDateAfterXDays) > Number(plan.dueDateAfterXDays) ||
+        (plan?.price ?? 0) -
+          Logics.Finances.calcDiscount(
+            plan?.price ?? 0,
+            plan?.discount ?? 0,
+            plan?.discountType ?? Types.Types.TDiscount.NO
+          ) !==
+          payload.plan?.discountedPrice
+      ) {
         throw new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_OBJECT_OR_PLANE_MODIFIED)
       }
       const contractModel = await DBModels.ContractModel.findOne({
@@ -273,12 +299,18 @@ export default class Contracts {
       }
       const ikomidaID = `com.ikomida.br.${bundle(payload.contractName ?? '')}`
       const plan = await this.selectPlan(payload)
-      if (!plan || (plan?.price ?? 0) -
-        Logics.Finances.calcDiscount(
-          plan?.price ?? 0,
-          plan?.discount ?? 0,
-          plan?.discountType ?? Types.Types.TDiscount.NO
-        ) !== payload.plan?.price) {
+      if (
+        !plan ||
+        plan?.price !== payload.plan?.price ||
+        Number(payload.plan?.dueDateAfterXDays) > Number(plan.dueDateAfterXDays) ||
+        (plan?.price ?? 0) -
+          Logics.Finances.calcDiscount(
+            plan?.price ?? 0,
+            plan?.discount ?? 0,
+            plan?.discountType ?? Types.Types.TDiscount.NO
+          ) !==
+          payload.plan?.discountedPrice
+      ) {
         throw new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_OBJECT_OR_PLANE_MODIFIED)
       }
       const validatePhoneValidationCode = await this.validatePhoneValidationCode(input)
@@ -303,45 +335,54 @@ export default class Contracts {
         throw new Utils.iKomidaError(Utils.iKomidaError.IKOMIDA_CONTRACT_SERVICE_RESTAURANT_ALREADY_REGISTERED)
       }
       const validity = Logics.Finances.pad(payload.payment?.validity ?? '', 4)
-      const subscriptionObject: Types.Classes.Asaas.CAsaasSubscription =
-        Types.Classes.Asaas.CAsaasSubscription.fromObject({
-          billingType: payload.billingType,
-          customer: {
-            name: `${payload.name} ${payload.lastName}`,
-            email: payload.email,
-            areaCode: payload.areaCode,
-            phone: String(Logics.Finances.toNumber(payload.phone ?? '')),
-            identity: String(Logics.Finances.toNumber(payload.identity ?? '')),
-            address: {
-              postalCode: payload.address?.postalCode,
-              name: payload.address?.street,
-              number: payload.address?.number,
-              complement: payload.address?.complement,
-              province: payload.address?.city
-            }
-          },
-          plan: {
-            name: plan?.name ?? '',
-            price:
-              (plan?.price ?? 0) -
-              Logics.Finances.calcDiscount(
-                plan?.price ?? 0,
-                plan?.discount ?? 0,
-                plan?.discountType ?? Types.Types.TDiscount.NO
-              ),
-            dueDateAfterXDays: payload?.plan?.dueDateAfterXDays ? plan?.dueDateAfterXDays : 0
-          },
-          ikomidaID,
-          payment: {
-            holderName: payload.payment?.holder,
-            number: payload.payment?.number,
-            expiryMonth: Number(validity.substring(0, 2)),
-            expiryYear: Number(validity.substring(2, 4)),
-            ccv: Number(payload.payment?.code)
-          },
-          externalReference: plan?.name,
-          observations: null
-        })
+      const subscriptionObject = Types.Classes.Asaas.CAsaasSubscription.init(
+        Types.Classes.CPlan.init(
+          plan?.name ?? '',
+          plan?.price ?? 0,
+          plan.discount ?? 0,
+          plan.discountType ?? Types.Types.TDiscount.NO,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          payload?.plan?.dueDateAfterXDays ? payload?.plan?.dueDateAfterXDays : 0,
+          plan.id
+        ),
+        payload.billingType,
+        Types.Classes.Asaas.CAsaasNewCustomer.init(
+          Types.Classes.Asaas.CAsaasAddress.init(
+            payload.address?.postalCode ?? '',
+            payload.address?.street ?? '',
+            payload.address?.number ?? '',
+            payload.address?.complement ?? '',
+            payload.address?.city ?? ''
+          ),
+          `${payload.name} ${payload.lastName}`,
+          payload.email,
+          `${payload.areaCode}${Logics.Finances.toNumber(payload.phone ?? '')}`,
+          String(Logics.Finances.toNumber(payload.identity ?? ''))
+        ),
+        ikomidaID,
+        Types.Classes.Asaas.CAsaasCard.init(
+          payload.payment?.holder ?? '',
+          Number(payload.payment?.number),
+          Number(validity.substring(0, 2)),
+          Number(validity.substring(2, 4)),
+          Number(payload.payment?.code)
+        ),
+        plan?.name
+      )
       const doRecurringSubscription = await this.paymentGateway?.doRecurringSubscription(subscriptionObject, ip)
       if (
         !doRecurringSubscription?.success ||
@@ -581,7 +622,7 @@ export default class Contracts {
   private async selectPlan(payload: Types.Classes.CContract) {
     const result = await DBModels.PlanModel.findAndCountAll({
       where: {
-        name: payload.plan?.name,
+        id: payload.plan?.id,
         dueDateAfterXDays: {
           [Domain.SqlDB.Op.gte]: payload.plan?.dueDateAfterXDays ?? 0
         }
