@@ -64,6 +64,17 @@ export default class Contracts {
     try {
       const payload: Types.Classes.CContract = Types.Classes.CContract.fromObject(input)
       const plan = await this.selectPlan(payload)
+      console.log('plane price:', (plan?.price ?? 0) -
+        Logics.Finances.calcDiscount(
+          plan?.price ?? 0,
+          plan?.discount ?? 0,
+          plan?.discountType ?? Types.Types.TDiscount.NO
+        ), payload.plan?.price, (plan?.price ?? 0) -
+        Logics.Finances.calcDiscount(
+          plan?.price ?? 0,
+          plan?.discount ?? 0,
+          plan?.discountType ?? Types.Types.TDiscount.NO
+        ) !== payload.plan?.price)
       if (!plan || (plan?.price ?? 0) -
         Logics.Finances.calcDiscount(
           plan?.price ?? 0,
