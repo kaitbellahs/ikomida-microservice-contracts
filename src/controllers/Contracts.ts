@@ -64,17 +64,6 @@ export default class Contracts {
     try {
       const payload: Types.Classes.CContract = Types.Classes.CContract.fromObject(input)
       const plan = await this.selectPlan(payload)
-      console.log('plane price:', (plan?.price ?? 0) -
-        Logics.Finances.calcDiscount(
-          plan?.price ?? 0,
-          plan?.discount ?? 0,
-          plan?.discountType ?? Types.Types.TDiscount.NO
-        ), payload.plan?.price, (plan?.price ?? 0) -
-        Logics.Finances.calcDiscount(
-          plan?.price ?? 0,
-          plan?.discount ?? 0,
-          plan?.discountType ?? Types.Types.TDiscount.NO
-        ) !== payload.plan?.price)
       if (!plan || (plan?.price ?? 0) -
         Logics.Finances.calcDiscount(
           plan?.price ?? 0,
@@ -593,13 +582,11 @@ export default class Contracts {
     const result = await DBModels.PlanModel.findAndCountAll({
       where: {
         name: payload.plan?.name,
-        active: true
+        dueDateAfterXDays: {
+          [Domain.SqlDB.Op.gte]: payload.plan?.dueDateAfterXDays ?? 0
+        }
       }
     })
     return result.count === 1 ? result.rows[0] : null
   }
-
-  //   private createCodeValidationObject(payload: Types.Classes.CContract) {
-  //     return Types.Classes.CContract.init('', payload.contractName, payload.name, payload.lastName, payload.contractIdentity, payload.email, payload.phone, payload.areaCode, payload.plan, payload.identity, undefined, payload.termId, payload.password, payload.confirmPassword, payload.address, payload.referredBy, undefined, payload.phoneValidationCode)
-  //   }
 }
